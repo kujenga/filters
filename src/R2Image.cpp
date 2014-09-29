@@ -251,8 +251,7 @@ svdTest(void)
 
 // Per-pixel Operations ////////////////////////////////////////////////
 
-void R2Image::
-Brighten(double factor)
+void R2Image::Brighten(double factor)
 {
   // Brighten the image by multiplying each pixel component by the factor.
   // This is implemented for you as an example of how to access and set pixels
@@ -264,8 +263,7 @@ Brighten(double factor)
   }
 }
 
-void R2Image::
-SobelX(void)
+void R2Image::SobelX(void)
 {
 	// Apply the Sobel operator to the image in X direction
 
@@ -288,12 +286,13 @@ void R2Image::SobelY(void)
   // iterate over all but edges
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
-
+      // hardcoded for faster calculation
       R2Pixel upperRow = tmp->Pixel(i-1,j-1)*sobelY[0][0] + tmp->Pixel(i,j-1)*sobelY[0][1] + tmp->Pixel(i+1,j-1)*sobelY[0][2];
       R2Pixel lowerRow = tmp->Pixel(i-1,j+1)*sobelY[2][0] + tmp->Pixel(i,j+1)*sobelY[2][1] + tmp->Pixel(i+1,j+1)*sobelY[2][2];
 
       Pixel(i,j) = upperRow + lowerRow;
       Pixel(i,j).Clamp();
+      // scales it up to 1/2 grey for visibility
       Pixel(i,j) += R2white_pixel/2.0;
       Pixel(i,j).Clamp();
     }
@@ -303,10 +302,15 @@ void R2Image::SobelY(void)
   delete tmp;
 }
 
-void R2Image::
-LoG(void)
+// calculates values for the LoG function
+double laplacian(double x, double y)
 {
-  // Apply the LoG oprator to the image
+
+}
+
+void R2Image::LoG(void)
+{
+  // Apply the LoG (Laplacian of Gaussian) operator to the image
 
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   fprintf(stderr, "LoG() not implemented\n");
@@ -314,8 +318,7 @@ LoG(void)
 
 
 
-void R2Image::
-ChangeSaturation(double factor)
+void R2Image::ChangeSaturation(double factor)
 {
   // Changes the saturation of an image
   // Find a formula that changes the saturation without affecting the image brightness
@@ -326,8 +329,7 @@ ChangeSaturation(double factor)
 
 
 // Linear filtering ////////////////////////////////////////////////
-void R2Image::
-Blur(double sigma)
+void R2Image::Blur(double sigma)
 {
   // Gaussian blur of the image. Separable solution is preferred
 
@@ -336,8 +338,7 @@ Blur(double sigma)
 }
 
 
-void R2Image::
-Harris(double sigma)
+void R2Image::Harris(double sigma)
 {
     // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
 	// Output should be 50% grey at flat regions, white at corners and black/dark near edges
@@ -347,8 +348,7 @@ Harris(double sigma)
 }
 
 
-void R2Image::
-Sharpen()
+void R2Image::Sharpen()
 {
   // Sharpen an image using a linear filter. Use a kernel of your choosing.
 
@@ -357,8 +357,7 @@ Sharpen()
 }
 
 
-void R2Image::
-blendOtherImageTranslated(R2Image * otherImage)
+void R2Image::blendOtherImageTranslated(R2Image * otherImage)
 {
 	// find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
 	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
@@ -367,8 +366,7 @@ blendOtherImageTranslated(R2Image * otherImage)
 	return;
 }
 
-void R2Image::
-blendOtherImageHomography(R2Image * otherImage)
+void R2Image::blendOtherImageHomography(R2Image * otherImage)
 {
 	// find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
 	// compute the matching homography, and blend the transformed "otherImage" into this image with a 50% opacity.
