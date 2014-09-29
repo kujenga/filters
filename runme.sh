@@ -31,3 +31,6 @@ src/imgpro input/globos_de_colores.jpg output/globos_brighntess_1.5.jpg \
 # sobelY tests
 src/imgpro input/islas_del_rosario.jpg output/islas_del_rosario_sobely.jpg \
     -sobelY
+
+src/imgpro input/praia_do_itapua.jpg output/praia_do_itapua_sobely.jpg \
+    -sobelY

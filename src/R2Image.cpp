@@ -293,14 +293,14 @@ void R2Image::SobelY(void)
       R2Pixel lowerRow = tmp->Pixel(i-1,j+1)*sobelY[2][0] + tmp->Pixel(i,j+1)*sobelY[2][1] + tmp->Pixel(i+1,j+1)*sobelY[2][2];
 
       Pixel(i,j) = upperRow + lowerRow;
-      // tmp->Pixel(i,j).Clamp();
+      Pixel(i,j).Clamp();
+      Pixel(i,j) += R2white_pixel/2.0;
+      Pixel(i,j).Clamp();
     }
   }
 
   // delete temporary image from the heap
   delete tmp;
-
-  fprintf(stderr, "SobelY() not implemented\n");
 }
 
 void R2Image::
