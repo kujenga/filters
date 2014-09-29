@@ -2,7 +2,7 @@
 
 
 
-// Include files 
+// Include files
 
 #include "R2/R2.h"
 #include "R2Pixel.h"
@@ -20,7 +20,7 @@ R2Image::
 R2Image(void)
   : pixels(NULL),
     npixels(0),
-    width(0), 
+    width(0),
     height(0)
 {
 }
@@ -31,7 +31,7 @@ R2Image::
 R2Image(const char *filename)
   : pixels(NULL),
     npixels(0),
-    width(0), 
+    width(0),
     height(0)
 {
   // Read image
@@ -44,7 +44,7 @@ R2Image::
 R2Image(int width, int height)
   : pixels(NULL),
     npixels(width * height),
-    width(width), 
+    width(width),
     height(height)
 {
   // Allocate pixels
@@ -58,15 +58,15 @@ R2Image::
 R2Image(int width, int height, const R2Pixel *p)
   : pixels(NULL),
     npixels(width * height),
-    width(width), 
+    width(width),
     height(height)
 {
   // Allocate pixels
   pixels = new R2Pixel [ npixels ];
   assert(pixels);
 
-  // Copy pixels 
-  for (int i = 0; i < npixels; i++) 
+  // Copy pixels
+  for (int i = 0; i < npixels; i++)
     pixels[i] = p[i];
 }
 
@@ -76,16 +76,16 @@ R2Image::
 R2Image(const R2Image& image)
   : pixels(NULL),
     npixels(image.npixels),
-    width(image.width), 
+    width(image.width),
     height(image.height)
-    
+
 {
   // Allocate pixels
   pixels = new R2Pixel [ npixels ];
   assert(pixels);
 
-  // Copy pixels 
-  for (int i = 0; i < npixels; i++) 
+  // Copy pixels
+  for (int i = 0; i < npixels; i++)
     pixels[i] = image.pixels[i];
 }
 
@@ -115,8 +115,8 @@ operator=(const R2Image& image)
   pixels = new R2Pixel [ npixels ];
   assert(pixels);
 
-  // Copy pixels 
-  for (int i = 0; i < npixels; i++) 
+  // Copy pixels
+  for (int i = 0; i < npixels; i++)
     pixels[i] = image.pixels[i];
 
   // Return image
@@ -157,7 +157,7 @@ svdTest(void)
 	linEquations[3][4] = p3[0];
 	linEquations[3][5] = p3[1];
 	linEquations[3][6] = 1.0;
-	
+
 	linEquations[4][1] = p4[0]*p4[0];
 	linEquations[4][2] = p4[0]*p4[1];
 	linEquations[4][3] = p4[1]*p4[1];
@@ -195,51 +195,51 @@ svdTest(void)
 	printf("Conic coefficients: %f, %f, %f, %f, %f, %f\n",nullspaceMatrix[1][smallestIndex],nullspaceMatrix[2][smallestIndex],nullspaceMatrix[3][smallestIndex],nullspaceMatrix[4][smallestIndex],nullspaceMatrix[5][smallestIndex],nullspaceMatrix[6][smallestIndex]);
 
 	// make sure the solution is correct:
-	printf("Equation #1 result: %f\n",	p1[0]*p1[0]*nullspaceMatrix[1][smallestIndex] + 
-										p1[0]*p1[1]*nullspaceMatrix[2][smallestIndex] + 
-										p1[1]*p1[1]*nullspaceMatrix[3][smallestIndex] + 
-										p1[0]*nullspaceMatrix[4][smallestIndex] + 
-										p1[1]*nullspaceMatrix[5][smallestIndex] + 
+	printf("Equation #1 result: %f\n",	p1[0]*p1[0]*nullspaceMatrix[1][smallestIndex] +
+										p1[0]*p1[1]*nullspaceMatrix[2][smallestIndex] +
+										p1[1]*p1[1]*nullspaceMatrix[3][smallestIndex] +
+										p1[0]*nullspaceMatrix[4][smallestIndex] +
+										p1[1]*nullspaceMatrix[5][smallestIndex] +
 										nullspaceMatrix[6][smallestIndex]);
 
-	printf("Equation #2 result: %f\n",	p2[0]*p2[0]*nullspaceMatrix[1][smallestIndex] + 
-										p2[0]*p2[1]*nullspaceMatrix[2][smallestIndex] + 
-										p2[1]*p2[1]*nullspaceMatrix[3][smallestIndex] + 
-										p2[0]*nullspaceMatrix[4][smallestIndex] + 
-										p2[1]*nullspaceMatrix[5][smallestIndex] + 
+	printf("Equation #2 result: %f\n",	p2[0]*p2[0]*nullspaceMatrix[1][smallestIndex] +
+										p2[0]*p2[1]*nullspaceMatrix[2][smallestIndex] +
+										p2[1]*p2[1]*nullspaceMatrix[3][smallestIndex] +
+										p2[0]*nullspaceMatrix[4][smallestIndex] +
+										p2[1]*nullspaceMatrix[5][smallestIndex] +
 										nullspaceMatrix[6][smallestIndex]);
 
-	printf("Equation #3 result: %f\n",	p3[0]*p3[0]*nullspaceMatrix[1][smallestIndex] + 
-										p3[0]*p3[1]*nullspaceMatrix[2][smallestIndex] + 
-										p3[1]*p3[1]*nullspaceMatrix[3][smallestIndex] + 
-										p3[0]*nullspaceMatrix[4][smallestIndex] + 
-										p3[1]*nullspaceMatrix[5][smallestIndex] + 
+	printf("Equation #3 result: %f\n",	p3[0]*p3[0]*nullspaceMatrix[1][smallestIndex] +
+										p3[0]*p3[1]*nullspaceMatrix[2][smallestIndex] +
+										p3[1]*p3[1]*nullspaceMatrix[3][smallestIndex] +
+										p3[0]*nullspaceMatrix[4][smallestIndex] +
+										p3[1]*nullspaceMatrix[5][smallestIndex] +
 										nullspaceMatrix[6][smallestIndex]);
 
-	printf("Equation #4 result: %f\n",	p4[0]*p4[0]*nullspaceMatrix[1][smallestIndex] + 
-										p4[0]*p4[1]*nullspaceMatrix[2][smallestIndex] + 
-										p4[1]*p4[1]*nullspaceMatrix[3][smallestIndex] + 
-										p4[0]*nullspaceMatrix[4][smallestIndex] + 
-										p4[1]*nullspaceMatrix[5][smallestIndex] + 
+	printf("Equation #4 result: %f\n",	p4[0]*p4[0]*nullspaceMatrix[1][smallestIndex] +
+										p4[0]*p4[1]*nullspaceMatrix[2][smallestIndex] +
+										p4[1]*p4[1]*nullspaceMatrix[3][smallestIndex] +
+										p4[0]*nullspaceMatrix[4][smallestIndex] +
+										p4[1]*nullspaceMatrix[5][smallestIndex] +
 										nullspaceMatrix[6][smallestIndex]);
 
-	printf("Equation #5 result: %f\n",	p5[0]*p5[0]*nullspaceMatrix[1][smallestIndex] + 
-										p5[0]*p5[1]*nullspaceMatrix[2][smallestIndex] + 
-										p5[1]*p5[1]*nullspaceMatrix[3][smallestIndex] + 
-										p5[0]*nullspaceMatrix[4][smallestIndex] + 
-										p5[1]*nullspaceMatrix[5][smallestIndex] + 
+	printf("Equation #5 result: %f\n",	p5[0]*p5[0]*nullspaceMatrix[1][smallestIndex] +
+										p5[0]*p5[1]*nullspaceMatrix[2][smallestIndex] +
+										p5[1]*p5[1]*nullspaceMatrix[3][smallestIndex] +
+										p5[0]*nullspaceMatrix[4][smallestIndex] +
+										p5[1]*nullspaceMatrix[5][smallestIndex] +
 										nullspaceMatrix[6][smallestIndex]);
 
 	R2Point test_point(0.34,-2.8);
 
-	printf("A point off the conic: %f\n",	test_point[0]*test_point[0]*nullspaceMatrix[1][smallestIndex] + 
-											test_point[0]*test_point[1]*nullspaceMatrix[2][smallestIndex] + 
-											test_point[1]*test_point[1]*nullspaceMatrix[3][smallestIndex] + 
-											test_point[0]*nullspaceMatrix[4][smallestIndex] + 
-											test_point[1]*nullspaceMatrix[5][smallestIndex] + 
+	printf("A point off the conic: %f\n",	test_point[0]*test_point[0]*nullspaceMatrix[1][smallestIndex] +
+											test_point[0]*test_point[1]*nullspaceMatrix[2][smallestIndex] +
+											test_point[1]*test_point[1]*nullspaceMatrix[3][smallestIndex] +
+											test_point[0]*nullspaceMatrix[4][smallestIndex] +
+											test_point[1]*nullspaceMatrix[5][smallestIndex] +
 											nullspaceMatrix[6][smallestIndex]);
 
-	return;	
+	return;
 }
 
 
@@ -267,18 +267,41 @@ Brighten(double factor)
 void R2Image::
 SobelX(void)
 {
-	// Apply the Sobel oprator to the image in X direction
-  
+	// Apply the Sobel operator to the image in X direction
+
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   fprintf(stderr, "SobelX() not implemented\n");
 }
 
-void R2Image::
-SobelY(void)
+void R2Image::SobelY(void)
 {
-	// Apply the Sobel oprator to the image in Y direction
-  
+	// Apply the Sobel operator to the image in Y direction
+
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
+
+  static float sobelY[][3] = {
+    {-1.0, -2.0, -1.0},
+    { 0.0,  0.0,  0.0},
+    { 1.0,  1.0,  1.0}
+  };
+
+  R2Image *tmp = new R2Image(this);
+
+  // iterate over all but edges
+  for (int i = 1; i < width-1; i++) {
+    for (int j = 1;  j < height-1; j++) {
+
+      float upperRow = sobelY[0][0]*tmp->Pixel(i-1,j-1) + sobelY[0][1]*tmp->Pixel(i,j-1) + sobelY[0][2]*tmp->Pixel(i+1,j-1);
+      float lowerRow = sobelY[2][0]*tmp->Pixel(i-1,j+1) + sobelY[2][1]*tmp->Pixel(i,j+1) + sobelY[2][2]*tmp->Pixel(i+1,j+1)
+
+      Pixel(i,j) = upperRow + lowerRow;
+      // tmp->Pixel(i,j).Clamp();
+    }
+  }
+
+  // delete temporary image from the heap
+  delete tmp;
+
   fprintf(stderr, "SobelY() not implemented\n");
 }
 
@@ -286,7 +309,7 @@ void R2Image::
 LoG(void)
 {
   // Apply the LoG oprator to the image
-  
+
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   fprintf(stderr, "LoG() not implemented\n");
 }
@@ -309,7 +332,7 @@ void R2Image::
 Blur(double sigma)
 {
   // Gaussian blur of the image. Separable solution is preferred
-  
+
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   fprintf(stderr, "Blur(%g) not implemented\n", sigma);
 }
@@ -320,7 +343,7 @@ Harris(double sigma)
 {
     // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
 	// Output should be 50% grey at flat regions, white at corners and black/dark near edges
-  
+
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   fprintf(stderr, "Harris(%g) not implemented\n", sigma);
 }
@@ -340,7 +363,7 @@ void R2Image::
 blendOtherImageTranslated(R2Image * otherImage)
 {
 	// find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
-	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage" 
+	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
 	// into this image with a 50% opacity.
 	fprintf(stderr, "fit other image using translation and blend imageB over imageA\n");
 	return;
@@ -372,13 +395,13 @@ Read(const char *filename)
     fprintf(stderr, "Input file has no extension (e.g., .jpg).\n");
     return 0;
   }
-  
+
   // Read file of appropriate type
   if (!strncmp(input_extension, ".bmp", 4)) return ReadBMP(filename);
   else if (!strncmp(input_extension, ".ppm", 4)) return ReadPPM(filename);
   else if (!strncmp(input_extension, ".jpg", 4)) return ReadJPEG(filename);
   else if (!strncmp(input_extension, ".jpeg", 5)) return ReadJPEG(filename);
-  
+
   // Should never get here
   fprintf(stderr, "Unrecognized image file extension");
   return 0;
@@ -395,7 +418,7 @@ Write(const char *filename) const
     fprintf(stderr, "Input file has no extension (e.g., .jpg).\n");
     return 0;
   }
-  
+
   // Write file of appropriate type
   if (!strncmp(input_extension, ".bmp", 4)) return WriteBMP(filename);
   else if (!strncmp(input_extension, ".ppm", 4)) return WritePPM(filename, 1);
@@ -464,7 +487,7 @@ typedef struct tagRGBQUAD {
 
 static unsigned short int WordReadLE(FILE *fp)
 {
-  // Read a unsigned short int from a file in little endian format 
+  // Read a unsigned short int from a file in little endian format
   unsigned short int lsb, msb;
   lsb = getc(fp);
   msb = getc(fp);
@@ -476,7 +499,7 @@ static unsigned short int WordReadLE(FILE *fp)
 static void WordWriteLE(unsigned short int x, FILE *fp)
 {
   // Write a unsigned short int to a file in little endian format
-  unsigned char lsb = (unsigned char) (x & 0x00FF); putc(lsb, fp); 
+  unsigned char lsb = (unsigned char) (x & 0x00FF); putc(lsb, fp);
   unsigned char msb = (unsigned char) (x >> 8); putc(msb, fp);
 }
 
@@ -484,7 +507,7 @@ static void WordWriteLE(unsigned short int x, FILE *fp)
 
 static unsigned int DWordReadLE(FILE *fp)
 {
-  // Read a unsigned int word from a file in little endian format 
+  // Read a unsigned int word from a file in little endian format
   unsigned int b1 = getc(fp);
   unsigned int b2 = getc(fp);
   unsigned int b3 = getc(fp);
@@ -496,7 +519,7 @@ static unsigned int DWordReadLE(FILE *fp)
 
 static void DWordWriteLE(unsigned int x, FILE *fp)
 {
-  // Write a unsigned int to a file in little endian format 
+  // Write a unsigned int to a file in little endian format
   unsigned char b1 = (x & 0x000000FF); putc(b1, fp);
   unsigned char b2 = ((x >> 8) & 0x000000FF); putc(b2, fp);
   unsigned char b3 = ((x >> 16) & 0x000000FF); putc(b3, fp);
@@ -507,7 +530,7 @@ static void DWordWriteLE(unsigned int x, FILE *fp)
 
 static int LongReadLE(FILE *fp)
 {
-  // Read a int word from a file in little endian format 
+  // Read a int word from a file in little endian format
   int b1 = getc(fp);
   int b2 = getc(fp);
   int b3 = getc(fp);
@@ -519,7 +542,7 @@ static int LongReadLE(FILE *fp)
 
 static void LongWriteLE(int x, FILE *fp)
 {
-  // Write a int to a file in little endian format 
+  // Write a int to a file in little endian format
   char b1 = (x & 0x000000FF); putc(b1, fp);
   char b2 = ((x >> 8) & 0x000000FF); putc(b2, fp);
   char b3 = ((x >> 16) & 0x000000FF); putc(b3, fp);
@@ -545,14 +568,14 @@ ReadBMP(const char *filename)
   bmfh.bfReserved1 = WordReadLE(fp);
   bmfh.bfReserved2 = WordReadLE(fp);
   bmfh.bfOffBits = DWordReadLE(fp);
-  
+
   /* Check file header */
   assert(bmfh.bfType == BMP_BF_TYPE);
   /* ignore bmfh.bfSize */
   /* ignore bmfh.bfReserved1 */
   /* ignore bmfh.bfReserved2 */
   assert(bmfh.bfOffBits == BMP_BF_OFF_BITS);
-  
+
   /* Read info header */
   BITMAPINFOHEADER bmih;
   bmih.biSize = DWordReadLE(fp);
@@ -566,8 +589,8 @@ ReadBMP(const char *filename)
   bmih.biYPelsPerMeter = LongReadLE(fp);
   bmih.biClrUsed = DWordReadLE(fp);
   bmih.biClrImportant = DWordReadLE(fp);
-  
-  // Check info header 
+
+  // Check info header
   assert(bmih.biSize == BMP_BI_SIZE);
   assert(bmih.biWidth > 0);
   assert(bmih.biHeight > 0);
@@ -594,7 +617,7 @@ ReadBMP(const char *filename)
     return 0;
   }
 
-  // Read buffer 
+  // Read buffer
   fseek(fp, (long) bmfh.bfOffBits, SEEK_SET);
   if (fread(buffer, 1, bmih.biSizeImage, fp) != bmih.biSizeImage) {
     fprintf(stderr, "Error while reading BMP file %s", filename);
@@ -647,7 +670,7 @@ WriteBMP(const char *filename) const
   int rowsize = 3 * width;
   if ((rowsize % 4) != 0) rowsize = (rowsize / 4 + 1) * 4;
 
-  // Write file header 
+  // Write file header
   BITMAPFILEHEADER bmfh;
   bmfh.bfType = BMP_BF_TYPE;
   bmfh.bfSize = BMP_BF_OFF_BITS + rowsize * height;
@@ -660,7 +683,7 @@ WriteBMP(const char *filename) const
   WordWriteLE(bmfh.bfReserved2, fp);
   DWordWriteLE(bmfh.bfOffBits, fp);
 
-  // Write info header 
+  // Write info header
   BITMAPINFOHEADER bmih;
   bmih.biSize = BMP_BI_SIZE;
   bmih.biWidth = width;
@@ -704,12 +727,12 @@ WriteBMP(const char *filename) const
     // Pad row
     for (int i = 0; i < pad; i++) fputc(0, fp);
   }
-  
+
   // Close file
   fclose(fp);
 
   // Return success
-  return 1;  
+  return 1;
 }
 
 
@@ -750,7 +773,7 @@ ReadPPM(const char *filename)
     fclose(fp);
     return 0;
   }
-	
+
   // Read max value
   double max_value;
   if (fscanf(fp, "%lf", &max_value) != 1) {
@@ -758,7 +781,7 @@ ReadPPM(const char *filename)
     fclose(fp);
     return 0;
   }
-	
+
   // Allocate image pixels
   pixels = new R2Pixel [ width * height ];
   if (!pixels) {
@@ -773,7 +796,7 @@ ReadPPM(const char *filename)
     int c = getc(fp);
     if (!isspace(c)) putc(c, fp);
 
-    // Read raw image data 
+    // Read raw image data
     // First ppm pixel is top-left, so read in opposite scan-line order
     for (int j = height-1; j >= 0; j--) {
       for (int i = 0; i < width; i++) {
@@ -786,7 +809,7 @@ ReadPPM(const char *filename)
     }
   }
   else {
-    // Read asci image data 
+    // Read asci image data
     // First ppm pixel is top-left, so read in opposite scan-line order
     for (int j = height-1; j >= 0; j--) {
       for (int i = 0; i < width; i++) {
@@ -829,7 +852,7 @@ WritePPM(const char *filename, int ascii) const
       return 0;
     }
 
-    // Print PPM image file 
+    // Print PPM image file
     // First ppm pixel is top-left, so write in opposite scan-line order
     fprintf(fp, "P3\n");
     fprintf(fp, "%d %d\n", width, height);
@@ -857,8 +880,8 @@ WritePPM(const char *filename, int ascii) const
       fprintf(stderr, "Unable to open image file: %s", filename);
       return 0;
     }
-    
-    // Print PPM image file 
+
+    // Print PPM image file
     // First ppm pixel is top-left, so write in opposite scan-line order
     fprintf(fp, "P6\n");
     fprintf(fp, "%d %d\n", width, height);
@@ -872,13 +895,13 @@ WritePPM(const char *filename, int ascii) const
         fprintf(fp, "%c%c%c", r, g, b);
       }
     }
-    
+
     // Close file
     fclose(fp);
   }
 
   // Return success
-  return 1;  
+  return 1;
 }
 
 
@@ -890,7 +913,7 @@ WritePPM(const char *filename, int ascii) const
 
 // #define USE_JPEG
 #ifdef USE_JPEG
-  extern "C" { 
+  extern "C" {
 #   define XMD_H // Otherwise, a conflict with INT32
 #   undef FAR // Otherwise, a conflict with windows.h
 #   include "jpeg/jpeglib.h"
@@ -944,7 +967,7 @@ ReadJPEG(const char *filename)
     return 0;
   }
 
-  // Read scan lines 
+  // Read scan lines
   // First jpeg pixel is top-left, so read pixels in opposite scan-line order
   while (cinfo.output_scanline < cinfo.output_height) {
     int scanline = cinfo.output_height - cinfo.output_scanline - 1;
@@ -1006,7 +1029,7 @@ ReadJPEG(const char *filename)
 }
 
 
-	
+
 
 int R2Image::
 WriteJPEG(const char *filename) const
@@ -1034,7 +1057,7 @@ WriteJPEG(const char *filename) const
   cinfo.optimize_coding = TRUE;
   jpeg_set_quality(&cinfo, 75, TRUE);
   jpeg_start_compress(&cinfo, TRUE);
-	
+
   // Allocate unsigned char buffer for reading image
   int rowsize = 3 * width;
   if ((rowsize % 4) != 0) rowsize = (rowsize / 4 + 1) * 4;
@@ -1090,9 +1113,3 @@ WriteJPEG(const char *filename) const
   return 0;
 #endif
 }
-
-
-
-
-
-
