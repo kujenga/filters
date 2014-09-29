@@ -1,6 +1,6 @@
-#!/bin/bash                                                                  
-# 
-# Create all output results 
+#!/bin/bash
+#
+# Create all output results
 #
 
 # Useful shell settings:
@@ -27,3 +27,7 @@ src/imgpro input/globos_de_colores.jpg output/globos_brighntess_1.0.jpg \
 
 src/imgpro input/globos_de_colores.jpg output/globos_brighntess_1.5.jpg \
     -brightness 1.5
+
+# sobelY tests
+src/imgpro input/islas_del_rosario.jpg output/islas_del_rosario_sobely.jpg \
+    -sobelY
