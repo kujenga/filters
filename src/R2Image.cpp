@@ -277,22 +277,20 @@ void R2Image::SobelY(void)
 {
 	// Apply the Sobel operator to the image in Y direction
 
-  // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
-
-  static float sobelY[][3] = {
+  float sobelY[][3] = {
     {-1.0, -2.0, -1.0},
     { 0.0,  0.0,  0.0},
     { 1.0,  1.0,  1.0}
   };
 
-  R2Image *tmp = new R2Image(this);
+  R2Image *tmp = new R2Image(*this);
 
   // iterate over all but edges
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
 
-      float upperRow = sobelY[0][0]*tmp->Pixel(i-1,j-1) + sobelY[0][1]*tmp->Pixel(i,j-1) + sobelY[0][2]*tmp->Pixel(i+1,j-1);
-      float lowerRow = sobelY[2][0]*tmp->Pixel(i-1,j+1) + sobelY[2][1]*tmp->Pixel(i,j+1) + sobelY[2][2]*tmp->Pixel(i+1,j+1)
+      R2Pixel upperRow = tmp->Pixel(i-1,j-1)*sobelY[0][0] + tmp->Pixel(i,j-1)*sobelY[0][1] + tmp->Pixel(i+1,j-1)*sobelY[0][2];
+      R2Pixel lowerRow = tmp->Pixel(i-1,j+1)*sobelY[2][0] + tmp->Pixel(i,j+1)*sobelY[2][1] + tmp->Pixel(i+1,j+1)*sobelY[2][2];
 
       Pixel(i,j) = upperRow + lowerRow;
       // tmp->Pixel(i,j).Clamp();
