@@ -267,25 +267,23 @@ void R2Image::SobelX(void)
 {
   // Apply the Sobel oprator to the image in X direction
 
-  static float sobelX[3][3] = {{-1, 0, 1}, 
+  float sobelX[3][3] = {{-1, 0, 1}, 
                        {-2, 0, 2}, 
                        {-1, 0, 1}};
-  R2Pixel leftTotal;
-  R2Pixel rightTotal;
+
   R2Image temp(width, height);
   R2Pixel R2greyscale_pixel(0.5, 0.5, 0.5, 1.0);
 
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
-
-      leftTotal = sobelX[0][0]*Pixel(i-1, j-1) 
-                  + sobelX[1][0]*Pixel(i-1, j) 
-                  + sobelX[2][0]*Pixel(i-1, j+1);
-      rightTotal = sobelX[0][2]*Pixel(i+1, j-1) 
-                  + sobelX[1][2]*Pixel(i+1, j) 
-                  + sobelX[2][2]*Pixel(i+1, j+1);
+      R2Pixel sumTotal;
+      for(int k = 0; k < 3; ++k) {
+        for(int l = 0; l < 3; ++l) {
+          sumTotal += sobelX[k][l]*Pixel(i+k-1, j+l-1);
+        }
+      }
       
-      temp.Pixel(i,j) = leftTotal + rightTotal + R2greyscale_pixel;
+      temp.Pixel(i,j) = sumTotal + R2greyscale_pixel;
       temp.Pixel(i,j).Clamp();
     }
   }
