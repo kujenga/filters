@@ -63,6 +63,7 @@ class R2Pixel {
 // Public variables 
 
 extern R2Pixel R2null_pixel;
+extern R2Pixel R2greyscale_pixel;
 extern R2Pixel R2black_pixel;
 extern R2Pixel R2red_pixel;
 extern R2Pixel R2green_pixel;
