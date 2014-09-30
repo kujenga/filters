@@ -371,16 +371,16 @@ void R2Image::Harris(double sigma)
 
 void R2Image::Sharpen()
 {
-  // Sharpen an image using a linear filter. Use a kernel of your choosing.
+  // Sharpen an image using a linear filter.
 
-  float s = 0.25;
-
+  float s = 1.0;
+  // Selected kernel.
   static float sharpen[3][3] = {{0, -s, 0}, 
-                       {-s, 1+4*s, -s}, 
+                       {-s, 5*s, -s}, 
                        {0, -s, 0}};
-  double red;
-  double green;
-  double blue;
+  double red = 0.0;
+  double green = 0.0;
+  double blue = 0.0;
 
   R2Image temp(width, height);
 
@@ -390,8 +390,9 @@ void R2Image::Sharpen()
       green = 0.0;
       blue = 0.0; 
 
-      for(int k = 0; k < 2; ++k) {
-        for(int l = 0; l < 2; ++l) {
+      for(int k = 0; k < 3; ++k) {
+        for(int l = 0; l < 3; ++l) {
+          // Compute weighted sums for each color value of the center pixel.
           red += sharpen[k][l]*Pixel(i+k-1,j+l-1).Red();
           green += sharpen[k][l]*Pixel(i+k-1,j+l-1).Green();
           blue += sharpen[k][l]*Pixel(i+k-1,j+l-1).Blue();
@@ -405,7 +406,7 @@ void R2Image::Sharpen()
       temp.Pixel(i,j).Clamp();
     }
   }
-
+  // Set the temporary values to the actual image.
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
       Pixel(i,j) = temp.Pixel(i,j);
