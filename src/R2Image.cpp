@@ -298,33 +298,35 @@ void R2Image::SobelX(void)
 
 void R2Image::SobelY(void)
 {
-	// Apply the Sobel operator to the image in Y direction
+	// Apply the Sobel oprator to the image in Y direction
 
-  float sobelY[][3] = {
-    {-1.0, -2.0, -1.0},
-    { 0.0,  0.0,  0.0},
-    { 1.0,  1.0,  1.0}
-  };
+  static float sobelY[3][3] = {{-1, -2, -1}, 
+                       {0, 0, 0}, 
+                       {1, 2, 1}};
 
-  R2Image *tmp = new R2Image(*this);
+  R2Image temp(width, height);
+  R2Pixel R2greyscale_pixel(0.5, 0.5, 0.5, 1.0);
 
-  // iterate over all but edges
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
-      // hardcoded for faster calculation
-      R2Pixel upperRow = tmp->Pixel(i-1,j-1)*sobelY[0][0] + tmp->Pixel(i,j-1)*sobelY[0][1] + tmp->Pixel(i+1,j-1)*sobelY[0][2];
-      R2Pixel lowerRow = tmp->Pixel(i-1,j+1)*sobelY[2][0] + tmp->Pixel(i,j+1)*sobelY[2][1] + tmp->Pixel(i+1,j+1)*sobelY[2][2];
-
-      Pixel(i,j) = upperRow + lowerRow;
-      Pixel(i,j).Clamp();
-      // scales it up to 1/2 grey for visibility
-      Pixel(i,j) += R2white_pixel/2.0;
-      Pixel(i,j).Clamp();
+      R2Pixel sumTotal;
+      for(int k = 0; k < 3; ++k) {
+        for(int l = 0; l < 3; ++l) {
+          sumTotal += sobelY[k][l]*Pixel(i+k-1, j+l-1);
+        }
+      }
+      
+      temp.Pixel(i,j) = sumTotal + R2greyscale_pixel;
+      temp.Pixel(i,j).Clamp();
     }
   }
 
-  // delete temporary image from the heap
-  delete tmp;
+  for (int i = 1; i < width-1; i++) {
+    for (int j = 1;  j < height-1; j++) {
+      Pixel(i,j) = temp.Pixel(i,j);
+      Pixel(i,j).Clamp();
+    }
+  }
 }
 
 void R2Image::LoG(void)
