@@ -26,3 +26,6 @@
 *.exe
 *.out
 *.app
+
+# No output images in repository
+output/*
