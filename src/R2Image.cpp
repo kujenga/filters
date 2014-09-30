@@ -286,7 +286,7 @@ void R2Image::SobelX(void)
                   + sobelX[2][2]*Pixel(i+1, j+1);
       
       temp.Pixel(i,j) = leftTotal + rightTotal + R2greyscale_pixel;
-      Pixel(i,j).Clamp();
+      temp.Pixel(i,j).Clamp();
     }
   }
 
@@ -327,12 +327,6 @@ void R2Image::SobelY(void)
 
   // delete temporary image from the heap
   delete tmp;
-}
-
-// calculates values for the LoG function
-double laplacian(double x, double y)
-{
-
 }
 
 void R2Image::LoG(void)
@@ -379,8 +373,45 @@ void R2Image::Sharpen()
 {
   // Sharpen an image using a linear filter. Use a kernel of your choosing.
 
-  // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
-  fprintf(stderr, "Sharpen() not implemented\n");
+  float s = 0.25;
+
+  static float sharpen[3][3] = {{0, -s, 0}, 
+                       {-s, 1+4*s, -s}, 
+                       {0, -s, 0}};
+  double red;
+  double green;
+  double blue;
+
+  R2Image temp(width, height);
+
+  for (int i = 1; i < width-1; i++) {
+    for (int j = 1;  j < height-1; j++) {
+      red = 0.0;
+      green = 0.0;
+      blue = 0.0; 
+
+      for(int k = 0; k < 2; ++k) {
+        for(int l = 0; l < 2; ++l) {
+          red += sharpen[k][l]*Pixel(i+k-1,j+l-1).Red();
+          green += sharpen[k][l]*Pixel(i+k-1,j+l-1).Green();
+          blue += sharpen[k][l]*Pixel(i+k-1,j+l-1).Blue();
+
+        }
+      }
+      temp.Pixel(i,j).SetRed(red);
+      temp.Pixel(i,j).SetGreen(green);
+      temp.Pixel(i,j).SetBlue(blue);
+
+      temp.Pixel(i,j).Clamp();
+    }
+  }
+
+  for (int i = 1; i < width-1; i++) {
+    for (int j = 1;  j < height-1; j++) {
+      Pixel(i,j) = temp.Pixel(i,j);
+      Pixel(i,j).Clamp();
+    }
+  }
 }
 
 
