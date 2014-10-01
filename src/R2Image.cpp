@@ -326,11 +326,12 @@ void R2Image::SobelY(void)
 
 double laplacianOfGaussian(double x, double y)
 {
-  double sig = 1.0;
-  double x2y2divsig = pow(x,2)+pow(y,2)/2*pow(sig,2);
+  double sig = 2.0;
+  double x2y2divsig = (pow(x,2)+pow(y,2))/(2*pow(sig,2));
   return 1/(M_PI*pow(sig,4)) * (x2y2divsig-1) * exp(-x2y2divsig);
 }
 
+// incomplete implementation, needs more work
 void R2Image::LoG(void)
 {
   // Apply the LoG (Laplacian of Gaussian) operator to the image
@@ -339,6 +340,7 @@ void R2Image::LoG(void)
   for (int i = 0; i < k; i++) {
     for (int j = 0; j < k; j ++) {
       logKernel[i][j] = laplacianOfGaussian(i,j);
+      //fprintf(stderr, "LoG() weight: %f x: %i, y: %i\n", logKernel[i][j], i, j);
     }
   }
 
@@ -373,43 +375,40 @@ double gaussian(double x, double y, double sigma)
 void R2Image::Blur(double sigma)
 {
   // Gaussian blur of the image. Separable solution is preferred
-  int k = 3;
+  int k = 3*(int)sigma;
 
-  double gaussKernel[3][3];
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j ++) {
+  double gaussKernel[k][k];
+  for (int i = 0; i < k; i++) {
+    for (int j = 0; j < k; j ++) {
       gaussKernel[i][j] = gaussian(i,j,sigma);
     }
   }
   // temporary images for new blurred version
-  R2Image tempY(width, height);
-  R2Image tempX(width, height);
-  for (int y = k/2; y < height-k/2; y++) {
-    for (int x = k/2; x < width-k/2; x++) {
-
+  R2Image temp(width, height);
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
       // y direction
       double yweights = 0;
-      for (int ly = -k/2; ly <= k/2; ly++) {
-        tempY.Pixel(x,y) += Pixel(x,y+ly)*gaussKernel[1][ly];
-        yweights += gaussKernel[1][ly];
+      int min = fmax(0, y-k/2);
+      int max = fmin(height-1, y+k/2);
+      for (int ly = min; ly <= max; ly++) {
+        temp.Pixel(x,y) += Pixel(x,ly)*gaussKernel[0][ly-y];
+        yweights += gaussKernel[0][ly-y];
       }
-      tempY.Pixel(x,y) = tempY.Pixel(x,y) / yweights;
-
-      // x direction
-      double xweights = 0;
-      for (int lx = -k/2; lx <= k/2; lx++) {
-        tempX.Pixel(x,y) += Pixel(x+lx,y)*gaussKernel[lx][1];
-        xweights += gaussKernel[lx][1];
-      }
-      tempX.Pixel(x,y) = tempX.Pixel(x,y) / xweights;
+      temp.Pixel(x,y) /= yweights;
     }
   }
-
-  // Set the temporary values to the actual image.
-  for (int i = 1; i < width-1; i++) {
-    for (int j = 1;  j < height-1; j++) {
-      Pixel(i,j) = (tempX.Pixel(i,j) + tempY.Pixel(i,j))/2.0;
-      Pixel(i,j).Clamp();
+  for (int x = 0; x < width; x++) {
+    for (int y = 0; y < height; y++) {
+      // x direction
+      double xweights = 0;
+      int min = fmax(0, x-k/2);
+      int max = fmin(width-1, x+k/2);
+      for (int lx = min; lx <= max; lx++) {
+        Pixel(x,y) += temp.Pixel(lx,y)*gaussKernel[lx-x][0];
+        xweights += gaussKernel[lx-x][0];
+      }
+      Pixel(x,y) /= xweights;
     }
   }
 }
