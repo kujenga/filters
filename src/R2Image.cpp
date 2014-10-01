@@ -378,7 +378,7 @@ void R2Image::Blur(double sigma)
         weights += gaussKernel[1][ly];
       }
       //fprintf(stderr, "weights: %f\n",weights);
-      tempY.Pixel(x,y) = 0.5*tempY.Pixel(x,y) / weights;
+      tempY.Pixel(x,y) = tempY.Pixel(x,y) / weights;
     }
   }
 
@@ -391,14 +391,14 @@ void R2Image::Blur(double sigma)
         tempX.Pixel(x,y) += Pixel(x+lx,y)*gaussKernel[lx][1];
         weights += gaussKernel[lx][1];
       }
-      tempX.Pixel(x,y) = 0.5*tempX.Pixel(x,y) / weights;
+      tempX.Pixel(x,y) = tempX.Pixel(x,y) / weights;
     }
   }
 
   // Set the temporary values to the actual image.
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
-      Pixel(i,j) = tempX.Pixel(i,j) + tempY.Pixel(i,j);
+      Pixel(i,j) = (tempX.Pixel(i,j) + tempY.Pixel(i,j))/2.0;
       Pixel(i,j).Clamp();
     }
   }
