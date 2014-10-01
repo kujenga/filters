@@ -267,9 +267,9 @@ void R2Image::SobelX(void)
 {
   // Apply the Sobel oprator to the image in X direction
 
-  static float sobelX[3][3] = {{-1, 0, 1}, 
-                       {-2, 0, 2}, 
-                       {-1, 0, 1}};
+  static float sobelX[3][3] = {{-1, 0, 1},
+                               {-2, 0, 2},
+                               {-1, 0, 1}};
   R2Pixel leftTotal;
   R2Pixel rightTotal;
   R2Image temp(width, height);
@@ -278,13 +278,13 @@ void R2Image::SobelX(void)
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
 
-      leftTotal = sobelX[0][0]*Pixel(i-1, j-1) 
-                  + sobelX[1][0]*Pixel(i-1, j) 
+      leftTotal = sobelX[0][0]*Pixel(i-1, j-1)
+                  + sobelX[1][0]*Pixel(i-1, j)
                   + sobelX[2][0]*Pixel(i-1, j+1);
-      rightTotal = sobelX[0][2]*Pixel(i+1, j-1) 
-                  + sobelX[1][2]*Pixel(i+1, j) 
+      rightTotal = sobelX[0][2]*Pixel(i+1, j-1)
+                  + sobelX[1][2]*Pixel(i+1, j)
                   + sobelX[2][2]*Pixel(i+1, j+1);
-      
+
       temp.Pixel(i,j) = leftTotal + rightTotal + R2greyscale_pixel;
       Pixel(i,j).Clamp();
     }
@@ -302,25 +302,28 @@ void R2Image::SobelY(void)
 {
 	// Apply the Sobel operator to the image in Y direction
 
-  float sobelY[][3] = {
+  float sobelY[3][3] = {
     {-1.0, -2.0, -1.0},
     { 0.0,  0.0,  0.0},
     { 1.0,  1.0,  1.0}
   };
 
   R2Image *tmp = new R2Image(*this);
+  R2Pixel upperRow;
+  R2Pixel lowerRow;
+  R2Pixel halfGrey = R2white_pixel/2.0;
 
   // iterate over all but edges
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
       // hardcoded for faster calculation
-      R2Pixel upperRow = tmp->Pixel(i-1,j-1)*sobelY[0][0] + tmp->Pixel(i,j-1)*sobelY[0][1] + tmp->Pixel(i+1,j-1)*sobelY[0][2];
-      R2Pixel lowerRow = tmp->Pixel(i-1,j+1)*sobelY[2][0] + tmp->Pixel(i,j+1)*sobelY[2][1] + tmp->Pixel(i+1,j+1)*sobelY[2][2];
+      upperRow = tmp->Pixel(i-1,j-1)*sobelY[0][0] + tmp->Pixel(i,j-1)*sobelY[0][1] + tmp->Pixel(i+1,j-1)*sobelY[0][2];
+      lowerRow = tmp->Pixel(i-1,j+1)*sobelY[2][0] + tmp->Pixel(i,j+1)*sobelY[2][1] + tmp->Pixel(i+1,j+1)*sobelY[2][2];
 
       Pixel(i,j) = upperRow + lowerRow;
       Pixel(i,j).Clamp();
       // scales it up to 1/2 grey for visibility
-      Pixel(i,j) += R2white_pixel/2.0;
+      Pixel(i,j) += halfGrey;
       Pixel(i,j).Clamp();
     }
   }
@@ -354,11 +357,55 @@ void R2Image::ChangeSaturation(double factor)
   fprintf(stderr, "ChangeSaturation(%g) not implemented\n", factor);
 }
 
+double gaussian(double x, double y, double sigma)
+{
+  return exp(-(pow(x,2)/(2*pow(sigma,2)) + pow(y,2)/(2*pow(sigma,2))));
+}
 
 // Linear filtering ////////////////////////////////////////////////
 void R2Image::Blur(double sigma)
 {
   // Gaussian blur of the image. Separable solution is preferred
+  int k = 3;
+
+  float gaussKernel[3][3];
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 3; j ++)
+      gaussKernel[i][j] = gaussian(i,j,sigma);
+  // hadcoded values would be faster for just 3x3
+
+  // computes seperable images
+  R2Image *tmp = new R2Image(*this);
+
+  // y direction
+  for (int y = k; y < height-k; y++) {
+    for (int x = k; x < width-k; x++) {
+      double val = 0;
+      double weights = 0;
+      for (int ly = (k-k/2); k < (k+k/2); ly++) {
+        val = Pixel(x,y+ly)*gaussKernel[1][ly]+val;
+        weights += gaussKernel[1][ly];
+      }
+      val /= weights;
+      tmp->Pixel(x,y) = val;
+    }
+  }
+
+  // x direction
+  for (int y = k; y < height-k; y++) {
+    for (int x = k; x < width-k; x++) {
+      double val = 0;
+      double weights = 0;
+      for (int lx = (k-k/2); k < (k+k/2); lx++) {
+        val = Pixel(x+lx,y)*gaussKernel[lx][1]+val;
+        weights += gaussKernel[lx][1];
+      }
+      val /= weights;
+      tmp->Pixel(x,y) = val;
+    }
+  }
+
+  
 
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   fprintf(stderr, "Blur(%g) not implemented\n", sigma);
