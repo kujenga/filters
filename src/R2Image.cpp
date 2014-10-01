@@ -267,26 +267,24 @@ void R2Image::SobelX(void)
 {
   // Apply the Sobel oprator to the image in X direction
 
-  static float sobelX[3][3] = {{-1, 0, 1},
-                               {-2, 0, 2},
-                               {-1, 0, 1}};
-  R2Pixel leftTotal;
-  R2Pixel rightTotal;
+  float sobelX[3][3] = {{-1, 0, 1},
+                       {-2, 0, 2},
+                       {-1, 0, 1}};
+
   R2Image temp(width, height);
   R2Pixel R2greyscale_pixel(0.5, 0.5, 0.5, 1.0);
 
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
+      R2Pixel sumTotal;
+      for(int k = 0; k < 3; ++k) {
+        for(int l = 0; l < 3; ++l) {
+          sumTotal += sobelX[k][l]*Pixel(i+k-1, j+l-1);
+        }
+      }
 
-      leftTotal = sobelX[0][0]*Pixel(i-1, j-1)
-                  + sobelX[1][0]*Pixel(i-1, j)
-                  + sobelX[2][0]*Pixel(i-1, j+1);
-      rightTotal = sobelX[0][2]*Pixel(i+1, j-1)
-                  + sobelX[1][2]*Pixel(i+1, j)
-                  + sobelX[2][2]*Pixel(i+1, j+1);
-
-      temp.Pixel(i,j) = leftTotal + rightTotal + R2greyscale_pixel;
-      Pixel(i,j).Clamp();
+      temp.Pixel(i,j) = sumTotal + R2greyscale_pixel;
+      temp.Pixel(i,j).Clamp();
     }
   }
 
@@ -300,42 +298,35 @@ void R2Image::SobelX(void)
 
 void R2Image::SobelY(void)
 {
-	// Apply the Sobel operator to the image in Y direction
+	// Apply the Sobel oprator to the image in Y direction
 
-  float sobelY[3][3] = {
-    {-1.0, -2.0, -1.0},
-    { 0.0,  0.0,  0.0},
-    { 1.0,  1.0,  1.0}
-  };
+  static float sobelY[3][3] = {{-1, -2, -1},
+                       {0, 0, 0},
+                       {1, 2, 1}};
 
-  R2Image *tmp = new R2Image(*this);
-  R2Pixel upperRow;
-  R2Pixel lowerRow;
-  R2Pixel halfGrey = R2white_pixel/2.0;
+  R2Image temp(width, height);
+  R2Pixel R2greyscale_pixel(0.5, 0.5, 0.5, 1.0);
 
-  // iterate over all but edges
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
-      // hardcoded for faster calculation
-      upperRow = tmp->Pixel(i-1,j-1)*sobelY[0][0] + tmp->Pixel(i,j-1)*sobelY[0][1] + tmp->Pixel(i+1,j-1)*sobelY[0][2];
-      lowerRow = tmp->Pixel(i-1,j+1)*sobelY[2][0] + tmp->Pixel(i,j+1)*sobelY[2][1] + tmp->Pixel(i+1,j+1)*sobelY[2][2];
+      R2Pixel sumTotal;
+      for(int k = 0; k < 3; ++k) {
+        for(int l = 0; l < 3; ++l) {
+          sumTotal += sobelY[k][l]*Pixel(i+k-1, j+l-1);
+        }
+      }
 
-      Pixel(i,j) = upperRow + lowerRow;
-      Pixel(i,j).Clamp();
-      // scales it up to 1/2 grey for visibility
-      Pixel(i,j) += halfGrey;
-      Pixel(i,j).Clamp();
+      temp.Pixel(i,j) = sumTotal + R2greyscale_pixel;
+      temp.Pixel(i,j).Clamp();
     }
   }
 
-  // delete temporary image from the heap
-  delete tmp;
-}
-
-// calculates values for the LoG function
-double laplacian(double x, double y)
-{
-
+  for (int i = 1; i < width-1; i++) {
+    for (int j = 1;  j < height-1; j++) {
+      Pixel(i,j) = temp.Pixel(i,j);
+      Pixel(i,j).Clamp();
+    }
+  }
 }
 
 void R2Image::LoG(void)
@@ -405,7 +396,7 @@ void R2Image::Blur(double sigma)
     }
   }
 
-  
+
 
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   fprintf(stderr, "Blur(%g) not implemented\n", sigma);
@@ -424,10 +415,48 @@ void R2Image::Harris(double sigma)
 
 void R2Image::Sharpen()
 {
-  // Sharpen an image using a linear filter. Use a kernel of your choosing.
+  // Sharpen an image using a linear filter.
 
-  // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
-  fprintf(stderr, "Sharpen() not implemented\n");
+  float s = 1.0;
+  // Selected kernel.
+  static float sharpen[3][3] = {{0, -s, 0},
+                       {-s, 5*s, -s},
+                       {0, -s, 0}};
+  double red = 0.0;
+  double green = 0.0;
+  double blue = 0.0;
+
+  R2Image temp(width, height);
+
+  for (int i = 1; i < width-1; i++) {
+    for (int j = 1;  j < height-1; j++) {
+      red = 0.0;
+      green = 0.0;
+      blue = 0.0;
+
+      for(int k = 0; k < 3; ++k) {
+        for(int l = 0; l < 3; ++l) {
+          // Compute weighted sums for each color value of the center pixel.
+          red += sharpen[k][l]*Pixel(i+k-1,j+l-1).Red();
+          green += sharpen[k][l]*Pixel(i+k-1,j+l-1).Green();
+          blue += sharpen[k][l]*Pixel(i+k-1,j+l-1).Blue();
+
+        }
+      }
+      temp.Pixel(i,j).SetRed(red);
+      temp.Pixel(i,j).SetGreen(green);
+      temp.Pixel(i,j).SetBlue(blue);
+
+      temp.Pixel(i,j).Clamp();
+    }
+  }
+  // Set the temporary values to the actual image.
+  for (int i = 1; i < width-1; i++) {
+    for (int j = 1;  j < height-1; j++) {
+      Pixel(i,j) = temp.Pixel(i,j);
+      Pixel(i,j).Clamp();
+    }
+  }
 }
 
 
