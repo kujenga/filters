@@ -371,14 +371,12 @@ void R2Image::Blur(double sigma)
   // y direction
   for (int y = k; y < height-k; y++) {
     for (int x = k; x < width-k; x++) {
-      double val = 0;
       double weights = 0;
       for (int ly = (k-k/2); k < (k+k/2); ly++) {
-        val = Pixel(x,y+ly)*gaussKernel[1][ly]+val;
+        tmpy->Pixel(x,y) += Pixel(x,y+ly)*gaussKernel[1][ly];
         weights += gaussKernel[1][ly];
       }
-      val /= weights;
-      tmpy->Pixel(x,y) = val;
+      tmpy->Pixel(x,y) /= weights;
     }
   }
 
@@ -386,14 +384,12 @@ void R2Image::Blur(double sigma)
   // x direction
   for (int y = k; y < height-k; y++) {
     for (int x = k; x < width-k; x++) {
-      double val = 0;
       double weights = 0;
       for (int lx = (k-k/2); k < (k+k/2); lx++) {
-        val = Pixel(x+lx,y)*gaussKernel[lx][1]+val;
+        tmpx->Pixel(x,y) += Pixel(x+lx,y)*gaussKernel[lx][1];
         weights += gaussKernel[lx][1];
       }
-      val /= weights;
-      tmpx->Pixel(x,y) = val;
+      tmpx->Pixel(x,y) /= weights;
     }
   }
 
