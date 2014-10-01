@@ -366,7 +366,7 @@ void R2Image::Blur(double sigma)
   // hadcoded values would be faster for just 3x3
 
   // computes seperable images
-  R2Image *tmp = new R2Image(*this);
+  R2Image *tmpy = new R2Image(*this);
 
   // y direction
   for (int y = k; y < height-k; y++) {
@@ -378,10 +378,11 @@ void R2Image::Blur(double sigma)
         weights += gaussKernel[1][ly];
       }
       val /= weights;
-      tmp->Pixel(x,y) = val;
+      tmpy->Pixel(x,y) = val;
     }
   }
 
+  R2Image *tmpx = new R2Image(*this);
   // x direction
   for (int y = k; y < height-k; y++) {
     for (int x = k; x < width-k; x++) {
@@ -392,11 +393,20 @@ void R2Image::Blur(double sigma)
         weights += gaussKernel[lx][1];
       }
       val /= weights;
-      tmp->Pixel(x,y) = val;
+      tmpx->Pixel(x,y) = val;
     }
   }
 
+  // Set the temporary values to the actual image.
+  for (int i = 1; i < width-1; i++) {
+    for (int j = 1;  j < height-1; j++) {
+      Pixel(i,j) = tmpx->Pixel(i,j) + tmpy->Pixel(i,j);
+      Pixel(i,j).Clamp();
+    }
+  }
 
+  delete tmpx;
+  delete tmpy;
 
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   fprintf(stderr, "Blur(%g) not implemented\n", sigma);
