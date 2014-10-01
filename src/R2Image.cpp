@@ -363,35 +363,29 @@ void R2Image::Blur(double sigma)
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j ++) {
       gaussKernel[i][j] = gaussian(i,j,sigma);
-      fprintf(stderr, "weights: %f\n", gaussKernel[i][j]);
     }
   }
 
-  // computes seperable images
   R2Image tempY(width, height);
-  // y direction
+  R2Image tempX(width, height);
   for (int y = k; y < height-k; y++) {
     for (int x = k; x < width-k; x++) {
-      double weights = 0;
+
+      // y direction
+      double yweights = 0;
       for (int ly = -k/2; ly <= k/2; ly++) {
         tempY.Pixel(x,y) += Pixel(x,y+ly)*gaussKernel[1][ly];
-        weights += gaussKernel[1][ly];
+        yweights += gaussKernel[1][ly];
       }
-      //fprintf(stderr, "weights: %f\n",weights);
-      tempY.Pixel(x,y) = tempY.Pixel(x,y) / weights;
-    }
-  }
+      tempY.Pixel(x,y) = tempY.Pixel(x,y) / yweights;
 
-  R2Image tempX(width, height);
-  // x direction
-  for (int x = k; x < width-k; x++) {
-    for (int y = k; y < height-k; y++) {
-      double weights = 0;
+      // x direction
+      double xweights = 0;
       for (int lx = -k/2; lx <= k/2; lx++) {
         tempX.Pixel(x,y) += Pixel(x+lx,y)*gaussKernel[lx][1];
-        weights += gaussKernel[lx][1];
+        xweights += gaussKernel[lx][1];
       }
-      tempX.Pixel(x,y) = tempX.Pixel(x,y) / weights;
+      tempX.Pixel(x,y) = tempX.Pixel(x,y) / xweights;
     }
   }
 
