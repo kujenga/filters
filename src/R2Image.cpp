@@ -365,11 +365,11 @@ void R2Image::Blur(double sigma)
       gaussKernel[i][j] = gaussian(i,j,sigma);
     }
   }
-
+  // temporary images for new blurred version
   R2Image tempY(width, height);
   R2Image tempX(width, height);
-  for (int y = k; y < height-k; y++) {
-    for (int x = k; x < width-k; x++) {
+  for (int y = k/2; y < height-k/2; y++) {
+    for (int x = k/2; x < width-k/2; x++) {
 
       // y direction
       double yweights = 0;
