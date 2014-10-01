@@ -93,6 +93,10 @@ class R2Image {
   void Resize(int width, int height);
   R2Pixel Sample(double u, double v,  int sampling_method);
 
+  // linear filtering helpers
+  void replaceWithTemp(R2Image &temp);
+  void applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp);
+
  private:
   R2Pixel *pixels;
   int npixels;

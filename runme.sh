@@ -39,5 +39,9 @@ src/imgpro input/praia_do_itapua.jpg output/praia_do_itapua_sobely.jpg \
 src/imgpro input/praia_do_itapua.jpg output/praia_do_itapua_blur2.jpg \
     -blur 2.0
 
-src/imgpro input/praia_do_itapua.jpg output/praia_do_itapua_blur3.jpg \
+src/imgpro input/islas_del_rosario.jpg output/islas_del_rosario_blur3.jpg \
     -blur 3.0
+
+# LoG tests
+src/imgpro input/islas_del_rosario.jpg output/islas_del_rosario_log.jpg \
+    -log

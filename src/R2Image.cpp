@@ -288,12 +288,7 @@ void R2Image::SobelX(void)
     }
   }
 
-  for (int i = 1; i < width-1; i++) {
-    for (int j = 1;  j < height-1; j++) {
-      Pixel(i,j) = temp.Pixel(i,j);
-      Pixel(i,j).Clamp();
-    }
-  }
+  replaceWithTemp(temp);
 }
 
 void R2Image::SobelY(void)
@@ -329,9 +324,30 @@ void R2Image::SobelY(void)
   }
 }
 
+double laplacianOfGaussian(double x, double y)
+{
+  double sig = 1.0;
+  double x2y2divsig = pow(x,2)+pow(y,2)/2*pow(sig,2);
+  return 1/(M_PI*pow(sig,4)) * (x2y2divsig-1) * exp(-x2y2divsig);
+}
+
 void R2Image::LoG(void)
 {
   // Apply the LoG (Laplacian of Gaussian) operator to the image
+  int k = 3;
+  double logKernel[3][3];
+  for (int i = 0; i < k; i++) {
+    for (int j = 0; j < k; j ++) {
+      logKernel[i][j] = laplacianOfGaussian(i,j);
+    }
+  }
+
+  R2Image temp(width, height);
+
+  // applies calculated kernel to the temporary image (currently blank)
+  applyKernelToTemp(k, k, logKernel, temp);
+
+  replaceWithTemp(temp);
 
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   fprintf(stderr, "LoG() not implemented\n");
@@ -471,6 +487,40 @@ void R2Image::blendOtherImageHomography(R2Image * otherImage)
 	// compute the matching homography, and blend the transformed "otherImage" into this image with a 50% opacity.
 	fprintf(stderr, "fit other image using a homography and blend imageB over imageA\n");
 	return;
+}
+
+////////////////////////////////////////////////////////////////////////
+// Filter Helper Functions
+////////////////////////////////////////////////////////////////////////
+
+// currently using c capabilities where array size must be known...
+// need something different for other kernel sizes
+void R2Image::applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp)
+{
+  for (int i = 1; i < temp.Width()-1; i++) {
+    for (int j = 1;  j < temp.Height()-1; j++) {
+      R2Pixel sumTotal;
+      for(int k = 0; k < 3; ++k) {
+        for(int l = 0; l < 3; ++l) {
+          sumTotal += kernel[k][l]*Pixel(i+k-1, j+l-1);
+        }
+      }
+
+      temp.Pixel(i,j) = sumTotal;
+      temp.Pixel(i,j).Clamp();
+    }
+  }
+}
+
+// replaces the pixels in this image with those in the temporary one
+void R2Image::replaceWithTemp(R2Image &temp)
+{
+  for (int i = 1; i < width-1; i++) {
+    for (int j = 1;  j < height-1; j++) {
+      Pixel(i,j) = temp.Pixel(i,j);
+      Pixel(i,j).Clamp();
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
