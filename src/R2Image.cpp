@@ -363,49 +363,46 @@ void R2Image::Blur(double sigma)
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j ++)
       gaussKernel[i][j] = gaussian(i,j,sigma);
-  // hadcoded values would be faster for just 3x3
 
   // computes seperable images
-  R2Image *tmpy = new R2Image(*this);
-
+  R2Image tempY(width, height);
   // y direction
   for (int y = k; y < height-k; y++) {
     for (int x = k; x < width-k; x++) {
       double weights = 0;
-      for (int ly = (k-k/2); k < (k+k/2); ly++) {
-        tmpy->Pixel(x,y) += Pixel(x,y+ly)*gaussKernel[1][ly];
+      int min = -k/2;
+      int max = k/2;
+      for (int ly = min; ly <= max; ly++) {
+        tempY.Pixel(x,y) += Pixel(x,y+ly)*gaussKernel[1][ly];
         weights += gaussKernel[1][ly];
       }
-      tmpy->Pixel(x,y) /= weights;
+      tempY.Pixel(x,y) /= weights;
     }
   }
 
-  R2Image *tmpx = new R2Image(*this);
+  R2Image tempX(width, height);
   // x direction
-  for (int y = k; y < height-k; y++) {
-    for (int x = k; x < width-k; x++) {
+  for (int x = k; x < width-k; x++) {
+    for (int y = k; y < height-k; y++) {
       double weights = 0;
-      for (int lx = (k-k/2); k < (k+k/2); lx++) {
-        tmpx->Pixel(x,y) += Pixel(x+lx,y)*gaussKernel[lx][1];
+      int min = -k/2;
+      int max = k/2;
+      for (int lx = min; lx <= max; lx++) {
+        tempX.Pixel(x,y) += Pixel(x+lx,y)*gaussKernel[lx][1];
+
         weights += gaussKernel[lx][1];
       }
-      tmpx->Pixel(x,y) /= weights;
+      tempX.Pixel(x,y) /= weights;
     }
   }
 
   // Set the temporary values to the actual image.
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
-      Pixel(i,j) = tmpx->Pixel(i,j) + tmpy->Pixel(i,j);
+      Pixel(i,j) = tempX.Pixel(i,j) + tempY.Pixel(i,j);
       Pixel(i,j).Clamp();
     }
   }
-
-  delete tmpx;
-  delete tmpy;
-
-  // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
-  fprintf(stderr, "Blur(%g) not implemented\n", sigma);
 }
 
 
