@@ -36,10 +36,16 @@ src/imgpro input/praia_do_itapua.jpg output/praia_do_itapua_sobely.jpg \
     -sobelY
 
 # blur tests
+src/imgpro input/test.jpg output/test_blur.jpg \
+    -blur 10.0
+
 src/imgpro input/praia_do_itapua.jpg output/praia_do_itapua_blur.jpg \
-    -blur 5.0
+    -blur 10.0
 
 src/imgpro input/islas_del_rosario.jpg output/islas_del_rosario_blur.jpg \
+    -blur 5.0
+
+src/imgpro input/globos_de_colores.jpg output/globos_de_colores_blur.jpg \
     -blur 5.0
 
 # LoG tests
