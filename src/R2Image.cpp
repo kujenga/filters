@@ -512,13 +512,14 @@ void R2Image::Harris(double sigma)
       Rharris.Pixel(x,y) = detA - alpha * traceA;
       Rharris.Pixel(x,y) += halfGray;
 
-      Pixel(x,y) = Rharris.Pixel(x,y);
+      // Pixel(x,y) = Rharris.Pixel(x,y);
     }
   }
-  return;
+  // return;
 
   // iterate over image in halfway-overlapping chunks, looking for the local maximum in each, and mark that
-  int localRad = 10;
+  printf("width: %i height:%i\n", width, height);
+  int localRad = 2*(int)sigma;
   for (int x = localRad; x < (width-localRad); x += localRad) {
     for (int y = localRad; y < (height-localRad); y += localRad) {
       // iterate over a kernel looking for a local maximum
@@ -534,8 +535,8 @@ void R2Image::Harris(double sigma)
       }
 
 
-      // color pixels around the local maximum if it is above a threshhold value
-      double threshold = 4.0;
+      // color pixels around the local maximum if it is above a basically arbitrary threshhold value
+      double threshold = 2.0;
       if (Rharris.Pixel(maxLocalX,maxLocalY).Red() > threshold) {
 
         // printf("%f\n",Rharris.Pixel(maxLocalX,maxLocalY).Red());
@@ -546,7 +547,7 @@ void R2Image::Harris(double sigma)
         int iMin = maxLocalX - siz;
         iMin = iMin < 0 ? 0 : iMin;
         int iMax = maxLocalX + siz;
-        iMax = iMax > height ? height : iMax;
+        iMax = iMax > width ? width : iMax;
 
         int jMin = maxLocalY - siz;
         jMin = jMin < 0 ? 0 : jMin;
