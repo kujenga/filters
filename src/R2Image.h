@@ -98,6 +98,8 @@ class R2Image {
   void replaceWithTemp(R2Image &temp);
   void applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp);
 
+  void colorAroundPoint(int x, int y, int siz);
+
  private:
   R2Pixel *pixels;
   int npixels;
