@@ -16,8 +16,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 
-R2Image::
-R2Image(void)
+R2Image::R2Image(void)
   : pixels(NULL),
     npixels(0),
     width(0),
@@ -27,8 +26,7 @@ R2Image(void)
 
 
 
-R2Image::
-R2Image(const char *filename)
+R2Image::R2Image(const char *filename)
   : pixels(NULL),
     npixels(0),
     width(0),
@@ -40,8 +38,7 @@ R2Image(const char *filename)
 
 
 
-R2Image::
-R2Image(int width, int height)
+R2Image::R2Image(int width, int height)
   : pixels(NULL),
     npixels(width * height),
     width(width),
@@ -54,8 +51,7 @@ R2Image(int width, int height)
 
 
 
-R2Image::
-R2Image(int width, int height, const R2Pixel *p)
+R2Image::R2Image(int width, int height, const R2Pixel *p)
   : pixels(NULL),
     npixels(width * height),
     width(width),
@@ -72,8 +68,7 @@ R2Image(int width, int height, const R2Pixel *p)
 
 
 
-R2Image::
-R2Image(const R2Image& image)
+R2Image::R2Image(const R2Image& image)
   : pixels(NULL),
     npixels(image.npixels),
     width(image.width),
@@ -284,7 +279,7 @@ void R2Image::SobelX(void)
       }
 
       temp.Pixel(i,j) = sumTotal + R2greyscale_pixel;
-      temp.Pixel(i,j).Clamp();
+      // temp.Pixel(i,j).Clamp();
     }
   }
 
@@ -312,14 +307,14 @@ void R2Image::SobelY(void)
       }
 
       temp.Pixel(i,j) = sumTotal + R2greyscale_pixel;
-      temp.Pixel(i,j).Clamp();
+      // temp.Pixel(i,j).Clamp();
     }
   }
 
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
       Pixel(i,j) = temp.Pixel(i,j);
-      Pixel(i,j).Clamp();
+      // Pixel(i,j).Clamp();
     }
   }
 }
@@ -461,14 +456,10 @@ void R2Image::Harris(double sigma)
   // int u = 1;
   // int v = 1;
 
-  R2Image Ix_sq = R2Image(width, height);
-  R2Image Iy_sq = R2Image(width, height);
-  for (int x = 0; x < width; x++) {
-    for (int y = 0; y < height; y++) {
-      Ix_sq.Pixel(x,y) = Pixel(x,y);
-      Iy_sq.Pixel(x,y) = Pixel(x,y);
-    }
-  }
+  const R2Image thisTemp = *this;
+
+  R2Image Ix_sq = R2Image(thisTemp);
+  R2Image Iy_sq = R2Image(thisTemp);
   // create Ix and Iy values (not yet squared)
   Ix_sq.SobelX();
   Iy_sq.SobelY();
@@ -487,6 +478,11 @@ void R2Image::Harris(double sigma)
       Iy_sq.Pixel(x,y) = Pixel(x,y);
     }
   }
+
+  // apply small blur to the the three temp images
+  Ix_sq.Blur(1.0);
+  Iy_sq.Blur(1.0);
+  Ix_Iy.Blur(1.0);
 
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
@@ -603,7 +599,7 @@ void R2Image::applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &t
       }
 
       temp.Pixel(i,j) = sumTotal;
-      temp.Pixel(i,j).Clamp();
+      // temp.Pixel(i,j).Clamp();
     }
   }
 }
@@ -614,7 +610,7 @@ void R2Image::replaceWithTemp(R2Image &temp)
   for (int i = 1; i < width-1; i++) {
     for (int j = 1;  j < height-1; j++) {
       Pixel(i,j) = temp.Pixel(i,j);
-      Pixel(i,j).Clamp();
+      // Pixel(i,j).Clamp();
     }
   }
 }
