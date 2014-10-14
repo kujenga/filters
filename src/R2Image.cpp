@@ -467,11 +467,6 @@ void R2Image::Blur(double sigma)
   }
 }
 
-double R2Image::sumSquaredDiffs(int x, int y, int u, int v)
-{
-  return 0.0;
-}
-
 void R2Image::Harris(double sigma)
 {
     // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
@@ -501,11 +496,12 @@ void R2Image::Harris(double sigma)
   }
 
   // apply small blur to the the three temp images
-  // Ix_sq.Blur(1.0);
-  // Iy_sq.Blur(1.0);
-  // Ix_Iy.Blur(1.0);
+  Ix_sq.Blur(1.0);
+  Iy_sq.Blur(1.0);
+  Ix_Iy.Blur(1.0);
 
-  R2Image Rharris = R2Image(width, height);
+  R2Image Rharris = R2Image(width,height);
+  R2Pixel halfGray = R2Pixel(0.5, 0.5, 0.5, 1.0);
 
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
@@ -513,17 +509,16 @@ void R2Image::Harris(double sigma)
       R2Pixel traceA = ((Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y))*(Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y)));
       double alpha = 0.04;
 
-      R2Pixel val = detA - alpha * traceA;
-      // convertToGrayscale(val);
+      Rharris.Pixel(x,y) = detA - alpha * traceA;
+      Rharris.Pixel(x,y) += halfGray;
 
-      Rharris.Pixel(x,y) = val;
-      Pixel(x,y) = val;
+      Pixel(x,y) = Rharris.Pixel(x,y);
     }
   }
-
+  return;
 
   // iterate over image in halfway-overlapping chunks, looking for the local maximum in each, and mark that
-  int localRad = 2;
+  int localRad = 10;
   for (int x = localRad; x < (width-localRad); x += localRad) {
     for (int y = localRad; y < (height-localRad); y += localRad) {
       // iterate over a kernel looking for a local maximum
@@ -531,17 +526,43 @@ void R2Image::Harris(double sigma)
       int maxLocalY = y - localRad;
       for (int kx = x - localRad; kx < x + localRad; kx++) {
         for (int ky = y - localRad; ky < y + localRad; ky++) {
-          if (Rharris.Pixel(kx,ky).Red() > Rharris.Pixel(maxLocalX,maxLocalY).Red() ) {
-
+          if (Pixel(kx,ky).Red() > Pixel(maxLocalX,maxLocalY).Red() ) {
+            maxLocalX = kx;
+            maxLocalY = ky;
           }
         }
       }
 
+
+      // color pixels around the local maximum if it is above a threshhold value
+      double threshold = 4.0;
+      if (Rharris.Pixel(maxLocalX,maxLocalY).Red() > threshold) {
+
+        // printf("%f\n",Rharris.Pixel(maxLocalX,maxLocalY).Red());
+        R2Pixel indicatorPix = R2Pixel(1.0, 1.0, 1.0, 1.0);
+        R2Pixel outerIndicatorPix = R2Pixel(0.0, 0.0, 0.0, 1.0);
+        int siz = 2;
+
+        int iMin = maxLocalX - siz;
+        iMin = iMin < 0 ? 0 : iMin;
+        int iMax = maxLocalX + siz;
+        iMax = iMax > height ? height : iMax;
+
+        int jMin = maxLocalY - siz;
+        jMin = jMin < 0 ? 0 : jMin;
+        int jMax = maxLocalY + siz;
+        jMax = jMax > height ? height : jMax;
+
+        for (int i = iMin; i <= iMax; i++) {
+          for (int j = jMin; j <= jMax; j++) {
+            bool onEdge = i == iMin || j == jMin || i == iMax || j == jMax;
+            Pixel(i,j) = onEdge ? outerIndicatorPix : indicatorPix;
+          }
+        }
+      }
     }
   }
 
-  // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
-  fprintf(stderr, "Harris(%g) not implemented\n", sigma);
 }
 
 

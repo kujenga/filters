@@ -61,3 +61,6 @@ popd
 # Harris tests
 src/imgpro input/islas_del_rosario.jpg output/islas_del_rosario_harris.jpg \
       -harris 3.0
+
+src/imgpro input/test.jpg output/test_harris.jpg \
+      -harris 3.0
