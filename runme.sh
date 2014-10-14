@@ -34,6 +34,12 @@ popd
 #
 # src/imgpro input/praia_do_itapua.jpg output/praia_do_itapua_sobely.jpg \
 #     -sobelY
+# # # sobelX tests
+# src/imgpro input/islas_del_rosario.jpg output/islas_del_rosario_sobelx.jpg \
+#     -sobelX
+#
+# src/imgpro input/praia_do_itapua.jpg output/praia_do_itapua_sobelx.jpg \
+#     -sobelX
 #
 # # blur tests
 # src/imgpro input/test.jpg output/test_blur.jpg \

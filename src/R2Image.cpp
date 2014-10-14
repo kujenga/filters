@@ -238,6 +238,46 @@ svdTest(void)
 }
 
 
+////////////////////////////////////////////////////////////////////////
+// Filter Helper Functions
+////////////////////////////////////////////////////////////////////////
+
+// currently using c capabilities where array size must be known...
+// need something different for other kernel sizes
+void R2Image::applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp)
+{
+  for (int i = 1; i < temp.Width()-1; i++) {
+    for (int j = 1;  j < temp.Height()-1; j++) {
+      R2Pixel sumTotal;
+      for(int k = 0; k < 3; ++k) {
+        for(int l = 0; l < 3; ++l) {
+          sumTotal += kernel[k][l]*Pixel(i+k-1, j+l-1);
+        }
+      }
+
+      temp.Pixel(i,j) = sumTotal;
+      // temp.Pixel(i,j).Clamp();
+    }
+  }
+}
+
+// replaces the pixels in this image with those in the temporary one
+void R2Image::replaceWithTemp(R2Image &temp)
+{
+  for (int i = 1; i < width-1; i++) {
+    for (int j = 1;  j < height-1; j++) {
+      Pixel(i,j) = temp.Pixel(i,j);
+      // Pixel(i,j).Clamp();
+    }
+  }
+}
+
+// converts a pixel to grayscale
+void convertToGrayscale(R2Pixel &pixel)
+{
+  double avg = (pixel.Red() + pixel.Blue() + pixel.Green())/3.0;
+  pixel = R2Pixel(avg, avg, avg, 1.0);
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Image processing functions
@@ -279,6 +319,7 @@ void R2Image::SobelX(void)
       }
 
       temp.Pixel(i,j) = sumTotal + R2greyscale_pixel;
+      convertToGrayscale(temp.Pixel(i,j));
       // temp.Pixel(i,j).Clamp();
     }
   }
@@ -307,6 +348,7 @@ void R2Image::SobelY(void)
       }
 
       temp.Pixel(i,j) = sumTotal + R2greyscale_pixel;
+      convertToGrayscale(temp.Pixel(i,j));
       // temp.Pixel(i,j).Clamp();
     }
   }
@@ -435,27 +477,6 @@ void R2Image::Harris(double sigma)
     // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
 	// Output should be 50% grey at flat regions, white at corners and black/dark near edges
 
-  /////////////////////////////////
-  // Calculate Weighting function
-  /////////////////////////////////
-  // int k = 3*(int)sigma;
-  // if (k%2 == 0) { k++; } // k should be odd for an evenly distributed kernel
-  // double W[k][k];
-  // for (int i = 0; i < k; i++) {
-  //   for (int j = 0; j < k; j ++) {
-  //     double x = (double)(i-k/2);
-  //     double y = (double)(j-k/2);
-  //     W[i][j] = gaussian2D(x,y,sigma);
-  //     printf(" (%i,%i) %f ",i,j,W[i][j]);
-  //   }
-  //   printf("\n");
-  // }
-  // printf("calculated weights\n");
-
-  // shift in the pixels for difference calculation
-  // int u = 1;
-  // int v = 1;
-
   const R2Image thisTemp = *this;
 
   R2Image Ix_sq = R2Image(thisTemp);
@@ -474,41 +495,48 @@ void R2Image::Harris(double sigma)
   // actually square the Ix and Iy values in those images
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
-      Ix_sq.Pixel(x,y) = Pixel(x,y);
-      Iy_sq.Pixel(x,y) = Pixel(x,y);
+      Ix_sq.Pixel(x,y) = Ix_sq.Pixel(x,y)*Ix_sq.Pixel(x,y);
+      Iy_sq.Pixel(x,y) = Iy_sq.Pixel(x,y)*Iy_sq.Pixel(x,y);
     }
   }
 
   // apply small blur to the the three temp images
-  Ix_sq.Blur(1.0);
-  Iy_sq.Blur(1.0);
-  Ix_Iy.Blur(1.0);
+  // Ix_sq.Blur(1.0);
+  // Iy_sq.Blur(1.0);
+  // Ix_Iy.Blur(1.0);
+
+  R2Image Rharris = R2Image(width, height);
 
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
+      R2Pixel detA = Ix_sq.Pixel(x,y)*Iy_sq.Pixel(x,y) + Ix_Iy.Pixel(x,y)*Ix_Iy.Pixel(x,y);
+      R2Pixel traceA = ((Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y))*(Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y)));
+      double alpha = 0.04;
 
-      Pixel(x,y) = Ix_sq.Pixel(x,y)*Iy_sq.Pixel(x,y) + Ix_Iy.Pixel(x,y)*Ix_Iy.Pixel(x,y) - 0.04*((Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y))*(Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y)));
-      // bound range between 0 and the height
-      // int xMin = fmax(0, x-k/2);
-      // int xMax = fmin(height-1, x+k/2);
-      // int yMin = fmax(0, y-k/2);
-      // int yMax = fmin(height-1, y+k/2);
-      // printf("xMin:%i xMax:%i yMin:%i yMax:%i\n",xMin,xMax,yMin,yMax);
-      //
-      // // compute the sum of the squared differences for the given sigma value
-      // double E = 0.0;
-      // printf("width: %i, height: %i\n",width,height);
-      // for (int wx = xMin; wx < xMax; wx++) {
-      //   for (int wy = yMin; wy < yMax; wy++) {
-      //     printf("wx: %i wy: %i\n",wx,wy);
-      //     int wxShift = wx + u;
-      //     int wyShift = wy + v;
-      //     R2Pixel diffPix = Pixel(wxShift, wyShift) - Pixel(wx, wy);
-      //     double diff = (diffPix.Red() + diffPix.Green() + diffPix.Blue())/3.0;
-      //     E += W[wx][wy] * pow(diff, 2);
-      //   }
-      // }
-      // printf("ssd (%i,%i): %f\n",x,y,E);
+      R2Pixel val = detA - alpha * traceA;
+      // convertToGrayscale(val);
+
+      Rharris.Pixel(x,y) = val;
+      Pixel(x,y) = val;
+    }
+  }
+
+
+  // iterate over image in halfway-overlapping chunks, looking for the local maximum in each, and mark that
+  int localRad = 2;
+  for (int x = localRad; x < (width-localRad); x += localRad) {
+    for (int y = localRad; y < (height-localRad); y += localRad) {
+      // iterate over a kernel looking for a local maximum
+      int maxLocalX = x - localRad;
+      int maxLocalY = y - localRad;
+      for (int kx = x - localRad; kx < x + localRad; kx++) {
+        for (int ky = y - localRad; ky < y + localRad; ky++) {
+          if (Rharris.Pixel(kx,ky).Red() > Rharris.Pixel(maxLocalX,maxLocalY).Red() ) {
+
+          }
+        }
+      }
+
     }
   }
 
@@ -579,40 +607,6 @@ void R2Image::blendOtherImageHomography(R2Image * otherImage)
 	// compute the matching homography, and blend the transformed "otherImage" into this image with a 50% opacity.
 	fprintf(stderr, "fit other image using a homography and blend imageB over imageA\n");
 	return;
-}
-
-////////////////////////////////////////////////////////////////////////
-// Filter Helper Functions
-////////////////////////////////////////////////////////////////////////
-
-// currently using c capabilities where array size must be known...
-// need something different for other kernel sizes
-void R2Image::applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp)
-{
-  for (int i = 1; i < temp.Width()-1; i++) {
-    for (int j = 1;  j < temp.Height()-1; j++) {
-      R2Pixel sumTotal;
-      for(int k = 0; k < 3; ++k) {
-        for(int l = 0; l < 3; ++l) {
-          sumTotal += kernel[k][l]*Pixel(i+k-1, j+l-1);
-        }
-      }
-
-      temp.Pixel(i,j) = sumTotal;
-      // temp.Pixel(i,j).Clamp();
-    }
-  }
-}
-
-// replaces the pixels in this image with those in the temporary one
-void R2Image::replaceWithTemp(R2Image &temp)
-{
-  for (int i = 1; i < width-1; i++) {
-    for (int j = 1;  j < height-1; j++) {
-      Pixel(i,j) = temp.Pixel(i,j);
-      // Pixel(i,j).Clamp();
-    }
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////
