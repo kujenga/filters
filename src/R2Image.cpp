@@ -430,11 +430,91 @@ void R2Image::Blur(double sigma)
   }
 }
 
+double R2Image::sumSquaredDiffs(int x, int y, int u, int v)
+{
+  return 0.0;
+}
 
 void R2Image::Harris(double sigma)
 {
     // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
 	// Output should be 50% grey at flat regions, white at corners and black/dark near edges
+
+  /////////////////////////////////
+  // Calculate Weighting function
+  /////////////////////////////////
+  // int k = 3*(int)sigma;
+  // if (k%2 == 0) { k++; } // k should be odd for an evenly distributed kernel
+  // double W[k][k];
+  // for (int i = 0; i < k; i++) {
+  //   for (int j = 0; j < k; j ++) {
+  //     double x = (double)(i-k/2);
+  //     double y = (double)(j-k/2);
+  //     W[i][j] = gaussian2D(x,y,sigma);
+  //     printf(" (%i,%i) %f ",i,j,W[i][j]);
+  //   }
+  //   printf("\n");
+  // }
+  // printf("calculated weights\n");
+
+  // shift in the pixels for difference calculation
+  // int u = 1;
+  // int v = 1;
+
+  R2Image Ix_sq = R2Image(width, height);
+  R2Image Iy_sq = R2Image(width, height);
+  for (int x = 0; x < width; x++) {
+    for (int y = 0; y < height; y++) {
+      Ix_sq.Pixel(x,y) = Pixel(x,y);
+      Iy_sq.Pixel(x,y) = Pixel(x,y);
+    }
+  }
+  // create Ix and Iy values (not yet squared)
+  Ix_sq.SobelX();
+  Iy_sq.SobelY();
+
+  R2Image Ix_Iy = R2Image(width, height);
+  for (int x = 0; x < width; x++) {
+    for (int y = 0; y < height; y++) {
+      Ix_Iy.Pixel(x,y) = Ix_sq.Pixel(x,y) * Iy_sq.Pixel(x,y);
+    }
+  }
+
+  // actually square the Ix and Iy values in those images
+  for (int x = 0; x < width; x++) {
+    for (int y = 0; y < height; y++) {
+      Ix_sq.Pixel(x,y) = Pixel(x,y);
+      Iy_sq.Pixel(x,y) = Pixel(x,y);
+    }
+  }
+
+  for (int x = 0; x < width; x++) {
+    for (int y = 0; y < height; y++) {
+
+      Pixel(x,y) = Ix_sq.Pixel(x,y)*Iy_sq.Pixel(x,y) + Ix_Iy.Pixel(x,y)*Ix_Iy.Pixel(x,y) - 0.04*((Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y))*(Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y)));
+      // bound range between 0 and the height
+      // int xMin = fmax(0, x-k/2);
+      // int xMax = fmin(height-1, x+k/2);
+      // int yMin = fmax(0, y-k/2);
+      // int yMax = fmin(height-1, y+k/2);
+      // printf("xMin:%i xMax:%i yMin:%i yMax:%i\n",xMin,xMax,yMin,yMax);
+      //
+      // // compute the sum of the squared differences for the given sigma value
+      // double E = 0.0;
+      // printf("width: %i, height: %i\n",width,height);
+      // for (int wx = xMin; wx < xMax; wx++) {
+      //   for (int wy = yMin; wy < yMax; wy++) {
+      //     printf("wx: %i wy: %i\n",wx,wy);
+      //     int wxShift = wx + u;
+      //     int wyShift = wy + v;
+      //     R2Pixel diffPix = Pixel(wxShift, wyShift) - Pixel(wx, wy);
+      //     double diff = (diffPix.Red() + diffPix.Green() + diffPix.Blue())/3.0;
+      //     E += W[wx][wy] * pow(diff, 2);
+      //   }
+      // }
+      // printf("ssd (%i,%i): %f\n",x,y,E);
+    }
+  }
 
   // FILL IN IMPLEMENTATION HERE (REMOVE PRINT STATEMENT WHEN DONE)
   fprintf(stderr, "Harris(%g) not implemented\n", sigma);

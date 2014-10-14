@@ -92,6 +92,7 @@ class R2Image {
   // Utility functions
   void Resize(int width, int height);
   R2Pixel Sample(double u, double v,  int sampling_method);
+  double sumSquaredDiffs(int x, int y, int u, int v);
 
   // linear filtering helpers
   void replaceWithTemp(R2Image &temp);
@@ -108,8 +109,7 @@ class R2Image {
 
 // Inline functions
 
-inline int R2Image::
-NPixels(void) const
+inline int R2Image::NPixels(void) const
 {
   // Return total number of pixels
   return npixels;
@@ -117,8 +117,7 @@ NPixels(void) const
 
 
 
-inline int R2Image::
-Width(void) const
+inline int R2Image::Width(void) const
 {
   // Return width
   return width;
@@ -126,8 +125,7 @@ Width(void) const
 
 
 
-inline int R2Image::
-Height(void) const
+inline int R2Image::Height(void) const
 {
   // Return height
   return height;
@@ -135,8 +133,7 @@ Height(void) const
 
 
 
-inline R2Pixel& R2Image::
-Pixel(int x, int y)
+inline R2Pixel& R2Image::Pixel(int x, int y)
 {
   // Return pixel value at (x,y)
   // (pixels start at lower-left and go in row-major order)
@@ -145,8 +142,7 @@ Pixel(int x, int y)
 
 
 
-inline R2Pixel *R2Image::
-Pixels(void)
+inline R2Pixel *R2Image::Pixels(void)
 {
   // Return pointer to pixels for whole image
   // (pixels start at lower-left and go in row-major order)
@@ -155,8 +151,7 @@ Pixels(void)
 
 
 
-inline R2Pixel *R2Image::
-Pixels(int x)
+inline R2Pixel *R2Image::Pixels(int x)
 {
   // Return pixels pointer for row at x
   // (pixels start at lower-left and go in row-major order)
@@ -165,17 +160,14 @@ Pixels(int x)
 
 
 
-inline R2Pixel *R2Image::
-operator[](int x)
+inline R2Pixel *R2Image::operator[](int x)
 {
   // Return pixels pointer for row at x
   return Pixels(x);
 }
 
 
-
-inline const R2Pixel *R2Image::
-operator[](int x) const
+inline const R2Pixel *R2Image::operator[](int x) const
 {
   // Return pixels pointer for row at x
   // (pixels start at lower-left and go in row-major order)
@@ -184,8 +176,7 @@ operator[](int x) const
 
 
 
-inline void R2Image::
-SetPixel(int x, int y, const R2Pixel& pixel)
+inline void R2Image::SetPixel(int x, int y, const R2Pixel& pixel)
 {
   // Set pixel
   pixels[x*height + y] = pixel;
