@@ -60,10 +60,10 @@ popd
 
 # Harris tests
 src/imgpro input/islas_del_rosario.jpg output/islas_del_rosario_harris.jpg \
-      -harris 5.0
+      -harris 2.0
 
 src/imgpro input/praia_da_sereia.jpg output/praia_da_sereia_harris.jpg \
-      -harris 5.0
+      -harris 2.0
 
 src/imgpro input/test.jpg output/test_harris.jpg \
-      -harris 5.0
+      -harris 2.0

@@ -246,16 +246,19 @@ svdTest(void)
 // need something different for other kernel sizes
 void R2Image::applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp)
 {
+
   for (int i = 1; i < temp.Width()-1; i++) {
     for (int j = 1;  j < temp.Height()-1; j++) {
       R2Pixel sumTotal;
+      double totalWeight = 0.0;
       for(int k = 0; k < 3; ++k) {
         for(int l = 0; l < 3; ++l) {
           sumTotal += kernel[k][l]*Pixel(i+k-1, j+l-1);
+          totalWeight += kernel[k][l];
         }
       }
 
-      temp.Pixel(i,j) = sumTotal;
+      temp.Pixel(i,j) = sumTotal/totalWeight;
       // temp.Pixel(i,j).Clamp();
     }
   }
@@ -326,9 +329,9 @@ void R2Image::SobelX(void)
 {
   // Apply the Sobel oprator to the image in X direction
 
-  float sobelX[3][3] = {{-1, 0, 1},
-                       {-2, 0, 2},
-                       {-1, 0, 1}};
+  double sobelX[3][3] = {{-1, 0, 1},
+                        {-2, 0, 2},
+                        {-1, 0, 1}};
 
   R2Image temp(width, height);
   R2Pixel R2greyscale_pixel(0.5, 0.5, 0.5, 1.0);
@@ -342,7 +345,7 @@ void R2Image::SobelX(void)
         }
       }
 
-      temp.Pixel(i,j) = sumTotal + R2greyscale_pixel;
+      temp.Pixel(i,j) = sumTotal;// + R2greyscale_pixel;
       convertToGrayscale(temp.Pixel(i,j));
       // temp.Pixel(i,j).Clamp();
     }
@@ -355,9 +358,9 @@ void R2Image::SobelY(void)
 {
 	// Apply the Sobel oprator to the image in Y direction
 
-  static float sobelY[3][3] = {{-1, -2, -1},
-                       {0, 0, 0},
-                       {1, 2, 1}};
+  static double sobelY[3][3] = {{-1, -2, -1},
+                               { 0,  0,  0},
+                               { 1,  2,  1}};
 
   R2Image temp(width, height);
   R2Pixel R2greyscale_pixel(0.5, 0.5, 0.5, 1.0);
@@ -371,7 +374,7 @@ void R2Image::SobelY(void)
         }
       }
 
-      temp.Pixel(i,j) = sumTotal + R2greyscale_pixel;
+      temp.Pixel(i,j) = sumTotal;// + R2greyscale_pixel;
       convertToGrayscale(temp.Pixel(i,j));
       // temp.Pixel(i,j).Clamp();
     }
@@ -507,7 +510,7 @@ int vpCompare(const void * a, const void * b)
 
 void R2Image::Harris(double sigma)
 {
-    // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
+  // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
 	// Output should be 50% grey at flat regions, white at corners and black/dark near edges
 
   const R2Image thisTemp = *this;
@@ -534,9 +537,15 @@ void R2Image::Harris(double sigma)
   }
 
   // apply small blur to the the three temp images
-  Ix_sq.Blur(1.0);
-  Iy_sq.Blur(1.0);
-  Ix_Iy.Blur(1.0);
+  // double gaussKernel[3][3] = {{0.367879, 0.606531, 0.367879},
+  //                             {0.606531, 1.000000, 0.606531},
+  //                             {0.367879, 0.606531, 0.367879}};
+  // applyKernelToTemp(3, 3, gaussKernel, Ix_sq);
+  // applyKernelToTemp(3, 3, gaussKernel, Iy_sq);
+  // applyKernelToTemp(3, 3, gaussKernel, Ix_Iy);
+  Ix_sq.Blur(sigma);
+  Iy_sq.Blur(sigma);
+  Ix_Iy.Blur(sigma);
 
   R2Image Rharris = R2Image(width,height);
   R2Pixel halfGray = R2Pixel(0.5, 0.5, 0.5, 1.0);
@@ -544,16 +553,16 @@ void R2Image::Harris(double sigma)
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
       R2Pixel detA = Ix_sq.Pixel(x,y)*Iy_sq.Pixel(x,y) + Ix_Iy.Pixel(x,y)*Ix_Iy.Pixel(x,y);
-      R2Pixel traceA = ((Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y))*(Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y)));
+      R2Pixel traceA = Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y);
       double alpha = 0.04;
 
-      Rharris.Pixel(x,y) = detA - alpha * traceA;
+      Rharris.Pixel(x,y) = detA - alpha * (traceA * traceA);
       Rharris.Pixel(x,y) += halfGray;
 
-      // Pixel(x,y) = Rharris.Pixel(x,y);
+      Pixel(x,y) = Rharris.Pixel(x,y);
     }
   }
-  // return;
+  return;
 
   ValPoint *vals = new ValPoint[width*height];
 
@@ -569,37 +578,30 @@ void R2Image::Harris(double sigma)
 
   qsort(vals, width*height, sizeof(ValPoint), vpCompare);
 
-  for (int i = 0; i < 150; i++) {
+  ValPoint *used = new ValPoint[width*height];
+  int coloredCount = 0;
+  for (int i = 0; coloredCount < 150 && i < width*height; i++) {
     ValPoint cur = vals[i];
-    printf("x:%i y:%i val:%f\n",cur.x, cur.y, cur.val);
+    // printf("x:%i y:%i val:%f\n",cur.x, cur.y, cur.val);
+    bool tooClose = false;
+    for (int t = 0; t < coloredCount && !tooClose; t++) {
+      int dx = used[t].x - cur.x;
+      int dy = used[t].y - cur.y;
+      int dist = sqrt(dx*dx + dy*dy);
+      // printf("dx:%i dy:%i dist:%i\n",dx,dy,dist);
+      if (dist < 10) {
+        tooClose = true;
+      }
+    }
+    if(tooClose) {
+      continue;
+    }
+    used[coloredCount] = cur;
     colorAroundPoint(cur.x, cur.y, 2);
+    coloredCount++;
   }
-
-  // iterate over image in halfway-overlapping chunks, looking for the local maximum in each, and mark that
-  // printf("width: %i height:%i\n", width, height);
-  // int localRad = 2*(int)sigma;
-  // for (int x = localRad; x < (width-localRad); x += localRad) {
-  //   for (int y = localRad; y < (height-localRad); y += localRad) {
-  //     // iterate over a kernel looking for a local maximum
-  //     int maxLocalX = x - localRad;
-  //     int maxLocalY = y - localRad;
-  //     for (int kx = x - localRad; kx < x + localRad; kx++) {
-  //       for (int ky = y - localRad; ky < y + localRad; ky++) {
-  //         if (Pixel(kx,ky).Red() > Pixel(maxLocalX,maxLocalY).Red() ) {
-  //           maxLocalX = kx;
-  //           maxLocalY = ky;
-  //         }
-  //       }
-  //     }
-  //
-  //
-  //     // color pixels around the local maximum if it is above a basically arbitrary threshhold value
-  //     double threshold = 2.0;
-  //     if (Rharris.Pixel(maxLocalX,maxLocalY).Red() > threshold) {
-  //       colorAroundPoint(maxLocalX, maxLocalY, 2);
-  //     }
-  //   }
-  // }
+  // delete vals;
+  // delete used;
 
 }
 
