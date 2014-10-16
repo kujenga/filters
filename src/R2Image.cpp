@@ -524,13 +524,10 @@ void R2Image::Harris(double sigma)
   R2Image Ix_Iy = R2Image(width, height);
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
+      // create Ix*Iy values
       Ix_Iy.Pixel(x,y) = Ix_sq.Pixel(x,y) * Iy_sq.Pixel(x,y);
-    }
-  }
 
-  // actually square the Ix and Iy values in those images
-  for (int x = 0; x < width; x++) {
-    for (int y = 0; y < height; y++) {
+      // actually square the Ix and Iy values in those images
       Ix_sq.Pixel(x,y) = Ix_sq.Pixel(x,y)*Ix_sq.Pixel(x,y);
       Iy_sq.Pixel(x,y) = Iy_sq.Pixel(x,y)*Iy_sq.Pixel(x,y);
     }
@@ -543,16 +540,16 @@ void R2Image::Harris(double sigma)
   // applyKernelToTemp(3, 3, gaussKernel, Ix_sq);
   // applyKernelToTemp(3, 3, gaussKernel, Iy_sq);
   // applyKernelToTemp(3, 3, gaussKernel, Ix_Iy);
-  Ix_sq.Blur(sigma);
-  Iy_sq.Blur(sigma);
-  Ix_Iy.Blur(sigma);
+  // Ix_sq.Blur(sigma);
+  // Iy_sq.Blur(sigma);
+  // Ix_Iy.Blur(sigma);
 
   R2Image Rharris = R2Image(width,height);
-  R2Pixel halfGray = R2Pixel(0.5, 0.5, 0.5, 1.0);
+  R2Pixel halfGray = R2Pixel(0.5, 0.5, 0.5, 0.0);
 
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
-      R2Pixel detA = Ix_sq.Pixel(x,y)*Iy_sq.Pixel(x,y) + Ix_Iy.Pixel(x,y)*Ix_Iy.Pixel(x,y);
+      R2Pixel detA = Ix_sq.Pixel(x,y)*Iy_sq.Pixel(x,y) - Ix_Iy.Pixel(x,y)*Ix_Iy.Pixel(x,y);
       R2Pixel traceA = Ix_sq.Pixel(x,y) + Iy_sq.Pixel(x,y);
       double alpha = 0.04;
 
@@ -564,8 +561,8 @@ void R2Image::Harris(double sigma)
   }
   return;
 
+  // creates an array of ValPoint structs to be sorted by value
   ValPoint *vals = new ValPoint[width*height];
-
   for (int x = 0; x < width; x ++) {
     for (int y = 0; y < height; y ++) {
       ValPoint curPoint;
@@ -576,19 +573,18 @@ void R2Image::Harris(double sigma)
     }
   }
 
+  // sorts ValPoint structs to find top 150
   qsort(vals, width*height, sizeof(ValPoint), vpCompare);
 
   ValPoint *used = new ValPoint[width*height];
   int coloredCount = 0;
   for (int i = 0; coloredCount < 150 && i < width*height; i++) {
     ValPoint cur = vals[i];
-    // printf("x:%i y:%i val:%f\n",cur.x, cur.y, cur.val);
     bool tooClose = false;
     for (int t = 0; t < coloredCount && !tooClose; t++) {
       int dx = used[t].x - cur.x;
       int dy = used[t].y - cur.y;
       int dist = sqrt(dx*dx + dy*dy);
-      // printf("dx:%i dy:%i dist:%i\n",dx,dy,dist);
       if (dist < 10) {
         tooClose = true;
       }
@@ -602,7 +598,6 @@ void R2Image::Harris(double sigma)
   }
   // delete vals;
   // delete used;
-
 }
 
 
