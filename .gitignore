@@ -29,3 +29,4 @@
 
 # No output images in repository
 output/*
+*.psd

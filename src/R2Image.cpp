@@ -540,9 +540,9 @@ void R2Image::Harris(double sigma)
   // applyKernelToTemp(3, 3, gaussKernel, Ix_sq);
   // applyKernelToTemp(3, 3, gaussKernel, Iy_sq);
   // applyKernelToTemp(3, 3, gaussKernel, Ix_Iy);
-  // Ix_sq.Blur(sigma);
-  // Iy_sq.Blur(sigma);
-  // Ix_Iy.Blur(sigma);
+  Ix_sq.Blur(sigma);
+  Iy_sq.Blur(sigma);
+  Ix_Iy.Blur(sigma);
 
   R2Image Rharris = R2Image(width,height);
   R2Pixel halfGray = R2Pixel(0.5, 0.5, 0.5, 0.0);
@@ -555,11 +555,12 @@ void R2Image::Harris(double sigma)
 
       Rharris.Pixel(x,y) = detA - alpha * (traceA * traceA);
       Rharris.Pixel(x,y) += halfGray;
+      Rharris.Pixel(x,y).Clamp();
 
-      Pixel(x,y) = Rharris.Pixel(x,y);
+      // Pixel(x,y) = Rharris.Pixel(x,y);
     }
   }
-  return;
+  // return;
 
   // creates an array of ValPoint structs to be sorted by value
   ValPoint *vals = new ValPoint[width*height];
@@ -575,7 +576,6 @@ void R2Image::Harris(double sigma)
 
   // sorts ValPoint structs to find top 150
   qsort(vals, width*height, sizeof(ValPoint), vpCompare);
-
   ValPoint *used = new ValPoint[width*height];
   int coloredCount = 0;
   for (int i = 0; coloredCount < 150 && i < width*height; i++) {
@@ -596,8 +596,8 @@ void R2Image::Harris(double sigma)
     colorAroundPoint(cur.x, cur.y, 2);
     coloredCount++;
   }
-  // delete vals;
-  // delete used;
+  delete vals;
+  delete used;
 }
 
 
