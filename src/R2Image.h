@@ -30,6 +30,14 @@ typedef enum {
 } R2ImageCompositeOperation;
 
 
+// used to sort the points by value and keep track of their location
+struct ValPoint
+{
+  double val;
+  int x;
+  int y;
+};
+
 
 // Class definition
 
@@ -92,9 +100,11 @@ class R2Image {
   // Utility functions
   void Resize(int width, int height);
   R2Pixel Sample(double u, double v,  int sampling_method);
+
   double sumSquaredDiffs(int x, int y, int u, int v);
 
   // linear filtering helpers
+  ValPoint* topFeaturePoints(double sigma);
   void replaceWithTemp(R2Image &temp);
   void applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp);
 

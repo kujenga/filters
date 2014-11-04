@@ -494,13 +494,7 @@ void R2Image::Blur(double sigma)
   }
 }
 
-// used to sort the points by value and keep track of their location
-struct ValPoint
-{
-  double val;
-  int x;
-  int y;
-};
+
 
 int vpCompare(const void * a, const void * b)
 {
@@ -508,11 +502,8 @@ int vpCompare(const void * a, const void * b)
   return diff < 0 ? 1 : -1;
 }
 
-void R2Image::Harris(double sigma)
+ValPoint* R2Image::topFeaturePoints(double sigma)
 {
-  // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
-	// Output should be 50% grey at flat regions, white at corners and black/dark near edges
-
   const R2Image thisTemp = *this;
 
   R2Image Ix_sq = R2Image(thisTemp);
@@ -534,12 +525,6 @@ void R2Image::Harris(double sigma)
   }
 
   // apply small blur to the the three temp images
-  // double gaussKernel[3][3] = {{0.367879, 0.606531, 0.367879},
-  //                             {0.606531, 1.000000, 0.606531},
-  //                             {0.367879, 0.606531, 0.367879}};
-  // applyKernelToTemp(3, 3, gaussKernel, Ix_sq);
-  // applyKernelToTemp(3, 3, gaussKernel, Iy_sq);
-  // applyKernelToTemp(3, 3, gaussKernel, Ix_Iy);
   Ix_sq.Blur(sigma);
   Iy_sq.Blur(sigma);
   Ix_Iy.Blur(sigma);
@@ -557,10 +542,9 @@ void R2Image::Harris(double sigma)
       Rharris.Pixel(x,y) += halfGray;
       Rharris.Pixel(x,y).Clamp();
 
-      // Pixel(x,y) = Rharris.Pixel(x,y);
+      Pixel(x,y) = Rharris.Pixel(x,y);
     }
   }
-  // return;
 
   // creates an array of ValPoint structs to be sorted by value
   ValPoint *vals = new ValPoint[width*height];
@@ -576,6 +560,17 @@ void R2Image::Harris(double sigma)
 
   // sorts ValPoint structs to find top 150
   qsort(vals, width*height, sizeof(ValPoint), vpCompare);
+
+  return vals;
+}
+
+void R2Image::Harris(double sigma)
+{
+  // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
+	// Output should be 50% grey at flat regions, white at corners and black/dark near edges
+
+  ValPoint *vals = topFeaturePoints(sigma);
+
   ValPoint *used = new ValPoint[width*height];
   int coloredCount = 0;
   for (int i = 0; coloredCount < 150 && i < width*height; i++) {
@@ -653,6 +648,9 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
 	// find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
 	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
 	// into this image with a 50% opacity.
+
+  
+
 	fprintf(stderr, "fit other image using translation and blend imageB over imageA\n");
 	return;
 }
