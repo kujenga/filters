@@ -104,7 +104,7 @@ class R2Image {
   double sumSquaredDiffs(int x, int y, int u, int v);
 
   // linear filtering helpers
-  ValPoint* topFeaturePoints(double sigma);
+  ValPoint* topHarrisFeaturePoints(double sigma, int numPts);
   void replaceWithTemp(R2Image &temp);
   void applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp);
 

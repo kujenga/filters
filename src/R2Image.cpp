@@ -502,7 +502,7 @@ int vpCompare(const void * a, const void * b)
   return diff < 0 ? 1 : -1;
 }
 
-ValPoint* R2Image::topFeaturePoints(double sigma)
+ValPoint* R2Image::topHarrisFeaturePoints(double sigma, int numPts)
 {
   const R2Image thisTemp = *this;
 
@@ -542,7 +542,7 @@ ValPoint* R2Image::topFeaturePoints(double sigma)
       Rharris.Pixel(x,y) += halfGray;
       Rharris.Pixel(x,y).Clamp();
 
-      Pixel(x,y) = Rharris.Pixel(x,y);
+      // Pixel(x,y) = Rharris.Pixel(x,y);
     }
   }
 
@@ -558,27 +558,18 @@ ValPoint* R2Image::topFeaturePoints(double sigma)
     }
   }
 
+
   // sorts ValPoint structs to find top 150
   qsort(vals, width*height, sizeof(ValPoint), vpCompare);
 
-  return vals;
-}
-
-void R2Image::Harris(double sigma)
-{
-  // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
-	// Output should be 50% grey at flat regions, white at corners and black/dark near edges
-
-  ValPoint *vals = topFeaturePoints(sigma);
-
-  ValPoint *used = new ValPoint[width*height];
+  ValPoint *topPoints = new ValPoint[numPts];
   int coloredCount = 0;
-  for (int i = 0; coloredCount < 150 && i < width*height; i++) {
+  for (int i = 0; coloredCount < numPts && i < width*height; i++) {
     ValPoint cur = vals[i];
     bool tooClose = false;
     for (int t = 0; t < coloredCount && !tooClose; t++) {
-      int dx = used[t].x - cur.x;
-      int dy = used[t].y - cur.y;
+      int dx = topPoints[t].x - cur.x;
+      int dy = topPoints[t].y - cur.y;
       int dist = sqrt(dx*dx + dy*dy);
       if (dist < 10) {
         tooClose = true;
@@ -587,12 +578,28 @@ void R2Image::Harris(double sigma)
     if(tooClose) {
       continue;
     }
-    used[coloredCount] = cur;
-    colorAroundPoint(cur.x, cur.y, 2);
-    coloredCount++;
+    topPoints[coloredCount++] = cur;
   }
   delete vals;
-  delete used;
+
+  return topPoints;
+}
+
+void R2Image::Harris(double sigma)
+{
+  // Harris corner detector. Make use of the previously developed filters, such as the Gaussian blur filter
+	// Output should be 50% grey at flat regions, white at corners and black/dark near edges
+
+  const int numPts = 150;
+
+  ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
+
+  for (int i = 0; i < numPts; i++) {
+    ValPoint cur = topPoints[i];
+    colorAroundPoint(cur.x, cur.y, 2);
+  }
+
+  delete topPoints;
 }
 
 
@@ -649,7 +656,7 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
 	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
 	// into this image with a 50% opacity.
 
-  
+
 
 	fprintf(stderr, "fit other image using translation and blend imageB over imageA\n");
 	return;
