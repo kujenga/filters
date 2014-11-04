@@ -73,8 +73,8 @@ popd
 
 
 ### Translation tests
-src/imgpro input/building_1.jpg output/building_1_out.jpg \
-      -harris 2.0
+# src/imgpro input/building_1.jpg output/building_1_out.jpg \
+#       -harris 2.0
 
 src/imgpro input/building_1.jpg output/building_translation.jpg \
        -matchTranslation input/building_2.jpg

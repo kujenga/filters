@@ -649,7 +649,39 @@ void R2Image::Sharpen()
   }
 }
 
-double normalizedCrossCorrelation(R2Image *image1, R2Image* image2, ValPoint pt1, ValPoint pt2)
+int doubleBoundedMin(int offset, int p1, int p2)
+{
+  int pMin = p1 < p2 ? p1 : p2;
+  return pMin + offset >= 0 ? offset : -p1;
+}
+
+int doubleBoundedMax(int offset, int p1, int p2, int h1, int h2)
+{
+  int pMax = p1 > p2 ? p1 : p2;
+  int hMin = h1 < h2 ? h1 : h2;
+  return (pMax + offset) <= hMin ? offset : hMin - pMax;
+}
+
+double sumSquaredDifferences(R2Image *image1, R2Image* image2, ValPoint pt1, ValPoint pt2, int sigma)
+{
+  int minDx = doubleBoundedMin(-sigma/2, pt1.x, pt2.x);
+  int maxDx = doubleBoundedMax(sigma/2, pt1.x, pt2.x, image1->Width(), image2->Width());
+
+  int minDy = doubleBoundedMin(-sigma/2, pt1.y, pt2.y);
+  int maxDy = doubleBoundedMax(sigma/2, pt1.y, pt2.y, image1->Height(), image2->Height());
+
+  double sum = 0.0;
+  for (int x = minDx; x < maxDx; x++) {
+    for (int y = minDy; y < maxDy; y++) {
+      R2Pixel diff = image1->Pixel(pt1.x + x, pt1.y + y) - image2->Pixel(pt2.x + x, pt2.y + y);
+      double lumDiff = diff.Luminance();
+      sum += pow(lumDiff,2);
+    }
+  }
+  return sum;
+}
+
+double normalizedCrossCorrelation(R2Image *image1, R2Image* image2, ValPoint pt1, ValPoint pt2, int sigma)
 {
 
   return 0.0;
@@ -665,19 +697,16 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
   const int numPts = 100;
   // size of the examination kernel
   const int sigma = 5.0;
-  // threshold for a returned NCC value to be considered a match
-  const double threshold = 1.0;
   // step size for the spiral search pattern for a match
-  const int maxSteps = 100;
+  const int maxSteps = 1000;
 
   ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
 
   for (int ptIndex = 0; ptIndex < numPts; ptIndex++) {
     ValPoint curPt = topPoints[ptIndex];
 
-    double curNCC = 0.0;
+    double minDiff = 999.0;
     ValPoint testPt = curPt;
-
 
     // This implementation spirals out from the original start point nievely. A better approach might look
     // at which direction yields the biggest improvement and follow that path.
@@ -698,13 +727,16 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
       testPt.x = curPt.x + x;
       testPt.y = curPt.y + y;
 
-      curNCC = normalizedCrossCorrelation(this, otherImage, curPt, testPt);
-      if (curNCC > threshold) {
-        break;
+      double curDiff = sumSquaredDifferences(this, otherImage, curPt, testPt, sigma);
+      // double curDiff = normalizedCrossCorrelation(this, otherImage, curPt, testPt, sigma);
+
+      // printf(" %f ",curDiff);
+      if (curDiff < minDiff) {
+        minDiff = curDiff;
       }
     }
-    // printf("Points (%i, %i) and (%i, %i) with NCC: %f\n\n",curPt.x, curPt.y, testPt.x, testPt.y, curNCC);
-    return;
+    printf("Vector: (%i, %i) with SSD: %f\n",curPt.x-testPt.x, curPt.y-testPt.y, minDiff);
+    // return;
   }
 
 	fprintf(stderr, "fit other image using translation and blend imageB over imageA\n");
