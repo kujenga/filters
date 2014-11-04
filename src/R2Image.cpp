@@ -649,6 +649,11 @@ void R2Image::Sharpen()
   }
 }
 
+double normalizedCrossCorrelation(R2Image *image1, R2Image* image2, ValPoint pt1, ValPoint pt2)
+{
+
+  return 0.0;
+}
 
 void R2Image::blendOtherImageTranslated(R2Image * otherImage)
 {
@@ -656,7 +661,51 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
 	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
 	// into this image with a 50% opacity.
 
+  // number of feature points to attempt matching
+  const int numPts = 100;
+  // size of the examination kernel
+  const int sigma = 5.0;
+  // threshold for a returned NCC value to be considered a match
+  const double threshold = 1.0;
+  // step size for the spiral search pattern for a match
+  const int maxSteps = 100;
 
+  ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
+
+  for (int ptIndex = 0; ptIndex < numPts; ptIndex++) {
+    ValPoint curPt = topPoints[ptIndex];
+
+    double curNCC = 0.0;
+    ValPoint testPt = curPt;
+
+
+    // This implementation spirals out from the original start point nievely. A better approach might look
+    // at which direction yields the biggest improvement and follow that path.
+    // it should also use the last value (or running average) of the previously found match vectors to speed up search.
+    int x = 0, y = 0;
+    int dx = 0, dy = -1;
+    while (x * y < maxSteps) {
+      // printf("x: %i, dx: %i, y: %i, dy: %i\n",x,dx,y,dy);
+      // adapted from answers at: http://stackoverflow.com/questions/398299/looping-in-a-spiral
+  		if (x == y || (x < 0 and x == -y) || (x > 0 && x == 1-y)) {
+        int t = dx;
+        dx = -dy;
+        dy = t;
+      }
+  		x += dx;
+      y += dy;
+
+      testPt.x = curPt.x + x;
+      testPt.y = curPt.y + y;
+
+      curNCC = normalizedCrossCorrelation(this, otherImage, curPt, testPt);
+      if (curNCC > threshold) {
+        break;
+      }
+    }
+    // printf("Points (%i, %i) and (%i, %i) with NCC: %f\n\n",curPt.x, curPt.y, testPt.x, testPt.y, curNCC);
+    return;
+  }
 
 	fprintf(stderr, "fit other image using translation and blend imageB over imageA\n");
 	return;
