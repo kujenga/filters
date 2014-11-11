@@ -33,9 +33,19 @@ typedef enum {
 // used to sort the points by value and keep track of their location
 struct ValPoint
 {
-  double val;
   int x;
   int y;
+  double val;
+
+  ValPoint() {
+    x = 0;
+    y = 0;
+    val = 0.0;
+  }
+  ValPoint(int x, int y):x(x),y(y) {
+    val = 0.0;
+  }
+  ValPoint(int x, int y, double val):x(x),y(y),val(val) {}
 };
 
 
@@ -109,6 +119,7 @@ class R2Image {
   void applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp);
 
   void colorAroundPoint(int x, int y, int siz);
+  void drawVectorFromPoint(ValPoint pt, ValPoint vec);
 
  private:
   R2Pixel *pixels;

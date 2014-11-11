@@ -306,6 +306,28 @@ void R2Image::colorAroundPoint(int x, int y, int siz)
   }
 }
 
+void R2Image::drawVectorFromPoint(ValPoint pt, ValPoint vec)
+{
+  double dx = vec.x < 0 ? -1.0 : 1.0;
+  double dy = (double)(vec.y) / (double)(vec.x * dx);
+  R2Pixel shade = R2Pixel(0.0, 1.0, 0.0, 1.0);
+
+  double exactX = (double) pt.x;
+  double exactY = (double) pt.y;
+
+  int x = (int) exactX;
+  int y = (int) exactY;
+  do {
+    Pixel(x,y) = shade;
+
+    exactX += dx;
+    exactY += dy;
+
+    x = (int) exactX;
+    y = (int) exactY;
+  } while( x > 0 && y > 0 && (x - pt.x > vec.x || y - pt.y > vec.y));
+}
+
 ////////////////////////////////////////////////////////////////////////
 // Image processing functions
 // YOU IMPLEMENT THE FUNCTIONS IN THIS SECTION
@@ -696,16 +718,17 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
   // number of feature points to attempt matching
   const int numPts = 100;
   // size of the examination kernel
-  const int sigma = 5.0;
+  const int sigma = 15.0;
   // step size for the spiral search pattern for a match
-  const int maxSteps = 1000;
+  const int maxSteps = 10000;
 
   ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
+  ValPoint *translationVectors = new ValPoint[numPts];
 
   for (int ptIndex = 0; ptIndex < numPts; ptIndex++) {
     ValPoint curPt = topPoints[ptIndex];
 
-    double minDiff = 999.0;
+    ValPoint minDiffPt = ValPoint(0,0,999.0);
     ValPoint testPt = curPt;
 
     // This implementation spirals out from the original start point nievely. A better approach might look
@@ -713,6 +736,7 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
     // it should also use the last value (or running average) of the previously found match vectors to speed up search.
     int x = 0, y = 0;
     int dx = 0, dy = -1;
+    int steps = 0;
     while (x * y < maxSteps) {
       // printf("x: %i, dx: %i, y: %i, dy: %i\n",x,dx,y,dy);
       // adapted from answers at: http://stackoverflow.com/questions/398299/looping-in-a-spiral
@@ -727,16 +751,43 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
       testPt.x = curPt.x + x;
       testPt.y = curPt.y + y;
 
-      double curDiff = sumSquaredDifferences(this, otherImage, curPt, testPt, sigma);
+      double testDiff = sumSquaredDifferences(this, otherImage, curPt, testPt, sigma);
       // double curDiff = normalizedCrossCorrelation(this, otherImage, curPt, testPt, sigma);
 
       // printf(" %f ",curDiff);
-      if (curDiff < minDiff) {
-        minDiff = curDiff;
+      if (testDiff < minDiffPt.val) {
+        minDiffPt.x = testPt.x;
+        minDiffPt.y = testPt.y;
+        minDiffPt.val = testDiff;
       }
     }
-    printf("Vector: (%i, %i) with SSD: %f\n",curPt.x-testPt.x, curPt.y-testPt.y, minDiff);
-    // return;
+
+    steps++;
+    int curDx = curPt.x-minDiffPt.x;
+    int curDy = curPt.y-minDiffPt.y;
+    translationVectors[ptIndex] = ValPoint(curDx, curDy);
+
+    colorAroundPoint(curPt.x, curPt.y, 2);
+    drawVectorFromPoint(curPt, ValPoint(curDx, curDy));
+    colorAroundPoint(curPt.x + curDx, curPt.y + curDy, 2);
+
+    printf("Vector: (%i, %i) from (%i, %i) with SSD: %f\n",curPt.x-minDiffPt.x, curPt.y-minDiffPt.y, curPt.x, curPt.y, minDiffPt.val);
+  }
+
+
+
+  // overlays the other image onto the current
+  int xShift = (int)floor(avgDx);
+  int yShift = (int)floor(avgDy);
+  for (int x = 0; x < Width(); x++) {
+    for (int y = 0; y < Height(); y++) {
+      int newX = x - xShift;
+      int newY = y - yShift;
+      if (newX < 0 || newY < 0 || newX > Width() || newY > Height()) {
+        continue;
+      }
+      Pixel(x,y) = (Pixel(x,y) + otherImage->Pixel(newX,newY)) / 2.0;
+    }
   }
 
 	fprintf(stderr, "fit other image using translation and blend imageB over imageA\n");
