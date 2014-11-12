@@ -771,12 +771,50 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
     drawVectorFromPoint(curPt, ValPoint(curDx, curDy));
     colorAroundPoint(curPt.x + curDx, curPt.y + curDy, 2);
 
-    printf("Vector: (%i, %i) from (%i, %i) with SSD: %f\n",curPt.x-minDiffPt.x, curPt.y-minDiffPt.y, curPt.x, curPt.y, minDiffPt.val);
+    // printf("Vector: (%i, %i) from (%i, %i) with SSD: %f\n",curPt.x-minDiffPt.x, curPt.y-minDiffPt.y, curPt.x, curPt.y, minDiffPt.val);
   }
 
+  // calculate averages
+  double totalAvgDx = 0.0;
+  double totalAvgDy = 0.0;
+  for (int i = 0; i < numPts; i++) {
+    totalAvgDx += (double)translationVectors[i].x;
+    totalAvgDy += (double)translationVectors[i].y;
+  }
+  totalAvgDx /= (double)numPts;
+  totalAvgDy /= (double)numPts;
 
+  // calculate 2 standard deviations away
+  double stdDevLimX = 0.0;
+  double stdDevLimY = 0.0;
+  for (int i = 0; i < numPts; i++) {
+    stdDevLimX += pow(translationVectors[i].x - totalAvgDx, 2);
+    stdDevLimY += pow(translationVectors[i].y - totalAvgDy, 2);
+  }
+  stdDevLimX = sqrt(stdDevLimX/(double)(numPts - 1));
+  stdDevLimY = sqrt(stdDevLimY/(double)(numPts - 1));
+
+  // printf("found averages: (%f, %f), and 2*stdDevs: (%f, %f)\n",totalAvgDx, totalAvgDy, stdDevLimX, stdDevLimY);
+
+  // calculate averages of numbers within t standard deviations of the mean
+  double avgDx = 0.0;
+  double avgDy = 0.0;
+  int usedPtCount = 0;
+  for (int i = 0; i < numPts; i++) {
+    double curX = translationVectors[i].x;
+    double curY = translationVectors[i].y;
+    if (abs(curX - totalAvgDx) < stdDevLimX && abs(curY - totalAvgDy) < stdDevLimY) {
+      // printf("Vector: (%f, %f)\n",curX, curY);
+      avgDx += curX;
+      avgDy += curY;
+      usedPtCount++;
+    }
+  }
+  avgDx /= (double)usedPtCount;
+  avgDy /= (double)usedPtCount;
 
   // overlays the other image onto the current
+  printf("error-corrected translation vector: (%f, %f)\n",avgDx, avgDy);
   int xShift = (int)floor(avgDx);
   int yShift = (int)floor(avgDy);
   for (int x = 0; x < Width(); x++) {
