@@ -70,11 +70,19 @@ popd
 #
 # src/imgpro input/test2.jpg output/test2_harris_out.jpg \
 #       -harris 2.0
+# src/imgpro input/globos_1.jpeg output/globos_de_colores_harris.jpg \
+#       -harris 2.0
 
 
 ### Translation tests
-# src/imgpro input/building_1.jpg output/building_1_out.jpg \
-#       -harris 2.0
+# src/imgpro input/building_1.jpg input/building_2.jpg \
+#       -matchTranslation output/building_translation.jpg
 
-src/imgpro input/building_1.jpg output/building_translation.jpg \
-       -matchTranslation input/building_2.jpg
+# src/imgpro input/flowers_1.jpg output/flowers_translation.jpg \
+#        -matchTranslation input/flowers_2.jpg
+
+# src/imgpro input/blocks_1.jpg output/blocks_translation.jpg \
+#        -matchTranslation input/blocks_2.jpg
+
+src/imgpro input/globos_1.jpeg output/globos_translation.jpg \
+    -matchTranslation input/globos_2.jpeg

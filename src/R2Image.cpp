@@ -674,17 +674,27 @@ void R2Image::Sharpen()
 int doubleBoundedMin(int offset, int p1, int p2)
 {
   int pMin = p1 < p2 ? p1 : p2;
-  return pMin + offset >= 0 ? offset : -p1;
+  if(pMin + offset >= 0) {
+    return offset;
+  } else {
+    // printf("pmin: %i\n",pMin);
+    return -pMin;
+  }
 }
 
 int doubleBoundedMax(int offset, int p1, int p2, int h1, int h2)
 {
   int pMax = p1 > p2 ? p1 : p2;
   int hMin = h1 < h2 ? h1 : h2;
-  return (pMax + offset) <= hMin ? offset : hMin - pMax;
+  if((pMax + offset) <= hMin) {
+    return offset;
+  } else {
+    // printf("hMin: %i pMax: %i\n",hMin,pMax);
+    return offset - (hMin - pMax);
+  }
 }
 
-double sumSquaredDifferences(R2Image *image1, R2Image* image2, ValPoint pt1, ValPoint pt2, int sigma)
+double sumSquaredDifferences(R2Image *image1, R2Image* image2, ValPoint pt1, ValPoint pt2, int sigma, bool logging)
 {
   int minDx = doubleBoundedMin(-sigma/2, pt1.x, pt2.x);
   int maxDx = doubleBoundedMax(sigma/2, pt1.x, pt2.x, image1->Width(), image2->Width());
@@ -693,11 +703,15 @@ double sumSquaredDifferences(R2Image *image1, R2Image* image2, ValPoint pt1, Val
   int maxDy = doubleBoundedMax(sigma/2, pt1.y, pt2.y, image1->Height(), image2->Height());
 
   double sum = 0.0;
+  if(logging)
+  {
+    printf("pt1(%i,%i) pt2(%i,%i) min(%i,%i) max(%i,%i)\n",pt1.x,pt1.y,pt2.x,pt2.y,minDx, minDy, maxDx, maxDy);
+  }
   for (int x = minDx; x < maxDx; x++) {
     for (int y = minDy; y < maxDy; y++) {
       R2Pixel diff = image1->Pixel(pt1.x + x, pt1.y + y) - image2->Pixel(pt2.x + x, pt2.y + y);
-      double lumDiff = diff.Luminance();
-      sum += pow(lumDiff,2);
+      float curDiff = diff.Red()*diff.Red() + diff.Green()*diff.Green() + diff.Blue()*diff.Blue();
+      sum += curDiff;
     }
   }
   return sum;
@@ -718,7 +732,7 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
   // number of feature points to attempt matching
   const int numPts = 100;
   // size of the examination kernel
-  const int sigma = 15.0;
+  const int sigma = 10.0;
   // step size for the spiral search pattern for a match
   const int maxSteps = 10000;
 
@@ -738,7 +752,7 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
     int dx = 0, dy = -1;
     int steps = 0;
     while (x * y < maxSteps) {
-      // printf("x: %i, dx: %i, y: %i, dy: %i\n",x,dx,y,dy);
+      // printf("x: %i\ty: %i\tdx: %i\tdy: %i",x,y,dx,dy);
       // adapted from answers at: http://stackoverflow.com/questions/398299/looping-in-a-spiral
   		if (x == y || (x < 0 and x == -y) || (x > 0 && x == 1-y)) {
         int t = dx;
@@ -750,12 +764,20 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
 
       testPt.x = curPt.x + x;
       testPt.y = curPt.y + y;
+      // skips points that are definitely outside of the range
+      if(testPt.x < 0 || testPt.y < 0 || curPt.x < 0 || curPt.y < 0)
+        continue;
 
-      double testDiff = sumSquaredDifferences(this, otherImage, curPt, testPt, sigma);
+      bool logging = false;
+      if (x == -20 && y == -13)
+        logging = false;
+      double testDiff = sumSquaredDifferences(this, otherImage, curPt, testPt, sigma, logging);
       // double curDiff = normalizedCrossCorrelation(this, otherImage, curPt, testPt, sigma);
 
-      // printf(" %f ",curDiff);
+      // printf("\t%f\n",testDiff);
       if (testDiff < minDiffPt.val) {
+        // printf("x: %i\ty: %i\tdx: %i\tdy: %i\n",x,y,dx,dy);
+        // printf(" %f \n",testDiff);
         minDiffPt.x = testPt.x;
         minDiffPt.y = testPt.y;
         minDiffPt.val = testDiff;
@@ -771,7 +793,10 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
     drawVectorFromPoint(curPt, ValPoint(curDx, curDy));
     colorAroundPoint(curPt.x + curDx, curPt.y + curDy, 2);
 
-    // printf("Vector: (%i, %i) from (%i, %i) with SSD: %f\n",curPt.x-minDiffPt.x, curPt.y-minDiffPt.y, curPt.x, curPt.y, minDiffPt.val);
+    if(minDiffPt.val > 2)
+    {
+      printf("Vector: ( %i , %i ) from (%i, %i) with SSD: %f\n",curPt.x-minDiffPt.x, curPt.y-minDiffPt.y, curPt.x, curPt.y, minDiffPt.val);
+    }
   }
 
   // calculate averages
@@ -794,27 +819,27 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
   stdDevLimX = sqrt(stdDevLimX/(double)(numPts - 1));
   stdDevLimY = sqrt(stdDevLimY/(double)(numPts - 1));
 
-  // printf("found averages: (%f, %f), and 2*stdDevs: (%f, %f)\n",totalAvgDx, totalAvgDy, stdDevLimX, stdDevLimY);
-
-  // calculate averages of numbers within t standard deviations of the mean
-  double avgDx = 0.0;
-  double avgDy = 0.0;
-  int usedPtCount = 0;
-  for (int i = 0; i < numPts; i++) {
-    double curX = translationVectors[i].x;
-    double curY = translationVectors[i].y;
-    if (abs(curX - totalAvgDx) < stdDevLimX && abs(curY - totalAvgDy) < stdDevLimY) {
-      // printf("Vector: (%f, %f)\n",curX, curY);
-      avgDx += curX;
-      avgDy += curY;
-      usedPtCount++;
-    }
-  }
-  avgDx /= (double)usedPtCount;
-  avgDy /= (double)usedPtCount;
+  printf("found averages: (%f, %f), and 2*stdDevs: (%f, %f)\n",totalAvgDx, totalAvgDy, stdDevLimX, stdDevLimY);
+  //
+  // // calculate averages of numbers within t standard deviations of the mean
+  double avgDx = totalAvgDx;
+  double avgDy = totalAvgDy;
+  // int usedPtCount = 0;
+  // for (int i = 0; i < numPts; i++) {
+  //   double curX = translationVectors[i].x;
+  //   double curY = translationVectors[i].y;
+  //   if (abs(curX - totalAvgDx) < stdDevLimX && abs(curY - totalAvgDy) < stdDevLimY) {
+  //     // printf("Vector: (%f, %f)\n",curX, curY);
+  //     avgDx += curX;
+  //     avgDy += curY;
+  //     usedPtCount++;
+  //   }
+  // }
+  // avgDx /= (double)usedPtCount;
+  // avgDy /= (double)usedPtCount;
 
   // overlays the other image onto the current
-  printf("error-corrected translation vector: (%f, %f)\n",avgDx, avgDy);
+  printf("non error-corrected translation vector: (%f, %f)\n",avgDx, avgDy);
   int xShift = (int)floor(avgDx);
   int yShift = (int)floor(avgDy);
   for (int x = 0; x < Width(); x++) {
