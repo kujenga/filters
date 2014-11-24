@@ -710,8 +710,8 @@ double sumSquaredDifferences(R2Image *image1, R2Image* image2, ValPoint pt1, Val
   for (int x = minDx; x < maxDx; x++) {
     for (int y = minDy; y < maxDy; y++) {
       R2Pixel diff = image1->Pixel(pt1.x + x, pt1.y + y) - image2->Pixel(pt2.x + x, pt2.y + y);
-      float curDiff = diff.Red()*diff.Red() + diff.Green()*diff.Green() + diff.Blue()*diff.Blue();
-      sum += curDiff;
+      // float curDiff = diff.Red()*diff.Red() + diff.Green()*diff.Green() + diff.Blue()*diff.Blue();
+      sum += powf(diff.Luminance(),2);
     }
   }
   return sum;
@@ -765,8 +765,12 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
       testPt.x = curPt.x + x;
       testPt.y = curPt.y + y;
       // skips points that are definitely outside of the range
-      if(testPt.x < 0 || testPt.y < 0 || curPt.x < 0 || curPt.y < 0)
-        continue;
+      if(testPt.x < 0 || testPt.x > otherImage->Width() ||
+        testPt.y < 0 || testPt.y > otherImage->Height() ||
+        curPt.x < 0 || curPt.x > Width() ||
+        curPt.y < 0 || curPt.y > Height()) {
+          continue;
+        }
 
       bool logging = false;
       if (x == -20 && y == -13)
@@ -793,8 +797,7 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
     drawVectorFromPoint(curPt, ValPoint(curDx, curDy));
     colorAroundPoint(curPt.x + curDx, curPt.y + curDy, 2);
 
-    if(minDiffPt.val > 2)
-    {
+    if(minDiffPt.val > 2) {
       printf("Vector: ( %i , %i ) from (%i, %i) with SSD: %f\n",curPt.x-minDiffPt.x, curPt.y-minDiffPt.y, curPt.x, curPt.y, minDiffPt.val);
     }
   }
