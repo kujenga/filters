@@ -75,11 +75,11 @@ popd
 
 
 ### Translation tests
-src/imgpro input/building_1.jpg output/building_translation.jpg \
-      -matchTranslation input/building_2.jpg
+# src/imgpro input/building_1.jpg output/building_translation.jpg \
+#       -matchTranslation input/building_2.jpg
 
-# src/imgpro input/flowers_1.jpg output/flowers_translation.jpg \
-#        -matchTranslation input/flowers_2.jpg
+src/imgpro input/flowers_1.jpg output/flowers_translation.jpg \
+       -matchTranslation input/flowers_2.jpg
 
 # src/imgpro input/blocks_1.jpg output/blocks_translation.jpg \
 #        -matchTranslation input/blocks_2.jpg

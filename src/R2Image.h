@@ -118,6 +118,8 @@ class R2Image {
   void replaceWithTemp(R2Image &temp);
   void applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp);
 
+  ValPoint* translationVectorsToImage(ValPoint* topPoints, R2Image *otherImage, int numPts, int sigma, int maxSteps);
+
   void colorAroundPoint(int x, int y, int siz);
   void drawVectorFromPoint(ValPoint pt, ValPoint vec);
 

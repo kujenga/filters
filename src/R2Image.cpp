@@ -593,7 +593,7 @@ ValPoint* R2Image::topHarrisFeaturePoints(double sigma, int numPts)
       int dx = topPoints[t].x - cur.x;
       int dy = topPoints[t].y - cur.y;
       int dist = sqrt(dx*dx + dy*dy);
-      if (dist < 10) {
+      if (dist < 20) {
         tooClose = true;
       }
     }
@@ -722,20 +722,8 @@ double normalizedCrossCorrelation(R2Image *image1, R2Image* image2, ValPoint pt1
   return 0.0;
 }
 
-void R2Image::blendOtherImageTranslated(R2Image * otherImage)
+ValPoint* R2Image::translationVectorsToImage(ValPoint* topPoints, R2Image *otherImage, int numPts, int sigma, int maxSteps)
 {
-	// find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
-	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
-	// into this image with a 50% opacity.
-
-  // number of feature points to attempt matching
-  const int numPts = 100;
-  // size of the examination kernel
-  const int sigma = 15;
-  // step size for the spiral search pattern for a match
-  const int maxSteps = 10000;
-
-  ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
   ValPoint *translationVectors = new ValPoint[numPts];
 
   for (int ptIndex = 0; ptIndex < numPts; ptIndex++) {
@@ -752,12 +740,12 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
     int steps = 0;
     while (x * y < maxSteps) {
       // adapted from answers at: http://stackoverflow.com/questions/398299/looping-in-a-spiral
-  		if (x == y || (x < 0 and x == -y) || (x > 0 && x == 1-y)) {
+      if (x == y || (x < 0 and x == -y) || (x > 0 && x == 1-y)) {
         int t = dx;
         dx = -dy;
         dy = t;
       }
-  		x += dx;
+      x += dx;
       y += dy;
 
       testPt.x = curPt.x + x;
@@ -768,7 +756,7 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
         curPt.x < 0 || curPt.x > Width() ||
         curPt.y < 0 || curPt.y > Height()) {
           continue;
-        }
+      }
 
       bool logging = false;
       if (x == -20 && y == -13)
@@ -794,6 +782,24 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
 
     printf("Vector: ( %i , %i ) from (%i, %i) with SSD: %f\n",curPt.x-minDiffPt.x, curPt.y-minDiffPt.y, curPt.x, curPt.y, minDiffPt.val);
   }
+  return translationVectors;
+}
+
+void R2Image::blendOtherImageTranslated(R2Image * otherImage)
+{
+	// find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
+	// compute the matching translation (pixel precision is OK), and blend the translated "otherImage"
+	// into this image with a 50% opacity.
+
+  // number of feature points to attempt matching
+  const int numPts = 100;
+  // size of the examination kernel
+  const int sigma = 15;
+  // step size for the spiral search pattern for a match
+  const int maxSteps = 10000;
+
+  ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
+  ValPoint *translationVectors = translationVectorsToImage(topPoints, otherImage, numPts, sigma, maxSteps);
 
   // calculate averages
   double totalAvgDx = 0.0;
@@ -862,8 +868,8 @@ void R2Image::blendOtherImageHomography(R2Image * otherImage)
   // size of the examination kernel
   const int sigma = 15;
 
-  ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
-  ValPoint *translationVectors = new ValPoint[numPts];
+  // ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
+  // ValPoint *translationVectors = new ValPoint[numPts];
 
   for (int ptIndex = 0; ptIndex < numPts; ptIndex++) {
 
