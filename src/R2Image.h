@@ -48,6 +48,18 @@ struct ValPoint
   ValPoint(int x, int y, double val):x(x),y(y),val(val) {}
 };
 
+struct double2
+{
+  double x;
+  double y;
+
+  double2() {
+    x = 0.0;
+    y = 0.0;
+  }
+  double2(double x, double y):x(x),y(y) {}
+}
+
 
 // Class definition
 

@@ -318,7 +318,11 @@ void R2Image::drawVectorFromPoint(ValPoint pt, ValPoint vec)
   int x = (int) exactX;
   int y = (int) exactY;
   do {
+    Pixel(x+1,y) = shade;
+    Pixel(x,y+1) = shade;
     Pixel(x,y) = shade;
+    Pixel(x-1,y) = shade;
+    Pixel(x,y-1) = shade;
 
     exactX += dx;
     exactY += dy;
@@ -785,6 +789,19 @@ ValPoint* R2Image::translationVectorsToImage(ValPoint* topPoints, R2Image *other
   return translationVectors;
 }
 
+double2 averageVector(ValPoint* vectors, int numPts)
+{
+  double avgX = 0.0;
+  double avgY = 0.0;
+  for (int i = 0; i < numPts; i++) {
+    avgX += (double)vectors[i].x;
+    avgY += (double)vectors[i].y;
+  }
+  avgX /= (double)numPts;
+  avgY /= (double)numPts;
+  return double2(avgX, avgY);
+}
+
 void R2Image::blendOtherImageTranslated(R2Image * otherImage)
 {
 	// find at least 100 features on this image, and another 100 on the "otherImage". Based on these,
@@ -798,30 +815,24 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
   // step size for the spiral search pattern for a match
   const int maxSteps = 10000;
 
+  // calculates the top points from the harris filter and the translation between images based on those
   ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
   ValPoint *translationVectors = translationVectorsToImage(topPoints, otherImage, numPts, sigma, maxSteps);
 
   // calculate averages
-  double totalAvgDx = 0.0;
-  double totalAvgDy = 0.0;
-  for (int i = 0; i < numPts; i++) {
-    totalAvgDx += (double)translationVectors[i].x;
-    totalAvgDy += (double)translationVectors[i].y;
-  }
-  totalAvgDx /= (double)numPts;
-  totalAvgDy /= (double)numPts;
+  double2 totalAvg = averageVector(translationVectors, numPts);
 
   // calculate 2 standard deviations away
   double stdDevLimX = 0.0;
   double stdDevLimY = 0.0;
   for (int i = 0; i < numPts; i++) {
-    stdDevLimX += pow(translationVectors[i].x - totalAvgDx, 2);
-    stdDevLimY += pow(translationVectors[i].y - totalAvgDy, 2);
+    stdDevLimX += pow(translationVectors[i].x - totalAvg.x, 2);
+    stdDevLimY += pow(translationVectors[i].y - totalAvg.y, 2);
   }
   stdDevLimX = sqrt(stdDevLimX/(double)(numPts - 1));
   stdDevLimY = sqrt(stdDevLimY/(double)(numPts - 1));
 
-  printf("found averages: (%f, %f), and 2*stdDevs: (%f, %f)\n",totalAvgDx, totalAvgDy, stdDevLimX, stdDevLimY);
+  printf("found averages: (%f, %f), and 2*stdDevs: (%f, %f)\n",totalAvg.x, totalAvg.y, stdDevLimX, stdDevLimY);
 
   // calculate averages of numbers within t standard deviations of the mean
   double avgDx = 0;
@@ -830,7 +841,7 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
   for (int i = 0; i < numPts; i++) {
     double curX = translationVectors[i].x;
     double curY = translationVectors[i].y;
-    if (abs(curX - totalAvgDx) < stdDevLimX && abs(curY - totalAvgDy) < stdDevLimY) {
+    if (abs(curX - totalAvg.x) < stdDevLimX && abs(curY - totalAvg.y) < stdDevLimY) {
       avgDx += curX;
       avgDy += curY;
       usedPtCount++;
