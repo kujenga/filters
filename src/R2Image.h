@@ -48,6 +48,15 @@ struct ValPoint
   ValPoint(int x, int y, double val):x(x),y(y),val(val) {}
 };
 
+struct VectorOrigin {
+  int xVec;
+  int yVec;
+  int xOrg;
+  int yOrg;
+  VectorOrigin() : xVec(0),yVec(0),xOrg(0),yOrg(0) {}
+  VectorOrigin(int dx, int dy, int xorg, int yorg) : xVec(dx),yVec(dy),xOrg(xorg),yOrg(yorg) {}
+};
+
 struct double2
 {
   double x;
@@ -58,7 +67,7 @@ struct double2
     y = 0.0;
   }
   double2(double x, double y):x(x),y(y) {}
-}
+};
 
 
 // Class definition
@@ -130,7 +139,8 @@ class R2Image {
   void replaceWithTemp(R2Image &temp);
   void applyKernelToTemp(int u, int v, double (&kernel)[3][3], R2Image &temp);
 
-  ValPoint* translationVectorsToImage(ValPoint* topPoints, R2Image *otherImage, int numPts, int sigma, int maxSteps);
+  VectorOrigin* translationVectorsToImage(ValPoint* topPoints, R2Image *otherImage, int numPts, int sigma, int maxSteps, bool indicators);
+  void line(int x0, int x1, int y0, int y1, float r, float g, float b);
 
   void colorAroundPoint(int x, int y, int siz);
   void drawVectorFromPoint(ValPoint pt, ValPoint vec);

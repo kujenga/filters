@@ -306,30 +306,110 @@ void R2Image::colorAroundPoint(int x, int y, int siz)
   }
 }
 
+void R2Image::line(int x0, int x1, int y0, int y1, float r, float g, float b)
+{
+  if(x0>3 && x0<width-3 && y0>3 && y0<height-3)
+  {
+    for(int x=x0-3;x<=x0+3;x++)
+    {
+      for(int y=y0-3;y<=y0+3;y++)
+      {
+        Pixel(x,y).Reset(r,g,b,1.0);
+      }
+    }
+  }
+
+  bool swap = false;
+  if (fabs(y1 - y0) > fabs(x1 - x0))
+  {
+    int x = x0;
+    x0 = y0;
+    y0 = x;
+
+    x = x1;
+    x1 = y1;
+    y1 = x;
+
+    swap = true;
+  }
+
+  if(x0>x1)
+  {
+    int x=y1;
+    y1=y0;
+    y0=x;
+
+    x=x1;
+    x1=x0;
+    x0=x;
+  }
+
+  int deltax = x1 - x0;
+  int deltay = y1 - y0;
+  float error = 0;
+  float deltaerr = 0.0;
+  if(deltax!=0) deltaerr =fabs(float(float((float) deltay) / deltax));    // Assume deltax != 0 (line is not vertical),
+    // note that this division needs to be done in a way that preserves the fractional part
+    int y = y0;
+
+  for(int x=x0;x<=x1;x++)
+  {
+    if (swap) {
+      Pixel(y,x).Reset(r,g,b,1.0);
+    } else {
+      Pixel(x,y).Reset(r,g,b,1.0);
+    }
+    error = error + deltaerr;
+    if(error>=0.5)
+    {
+      if(deltay>0) y = y + 1;
+      else y = y - 1;
+
+      error = error - 1.0;
+    }
+  }
+}
+
 void R2Image::drawVectorFromPoint(ValPoint pt, ValPoint vec)
 {
-  double dx = vec.x < 0 ? -1.0 : 1.0;
-  double dy = (double)(vec.y) / (double)(vec.x * dx);
   R2Pixel shade = R2Pixel(0.0, 1.0, 0.0, 1.0);
-
-  double exactX = (double) pt.x;
-  double exactY = (double) pt.y;
-
-  int x = (int) exactX;
-  int y = (int) exactY;
-  do {
-    Pixel(x+1,y) = shade;
-    Pixel(x,y+1) = shade;
+  // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+  int deltax = vec.x;
+  int deltay = vec.y;
+  double error = 0;
+  double deltaerr = abs(deltay / deltax);    // Assume deltax != 0 (line is not vertical),
+  // note that this division needs to be done in a way that preserves the fractional part
+  int y = pt.y;
+  for (int x = pt.x; x < pt.x + vec.x; x++) {
     Pixel(x,y) = shade;
-    Pixel(x-1,y) = shade;
-    Pixel(x,y-1) = shade;
+    error = error + deltaerr;
+    if (error >= 0.5) {
+      y = y + 1;
+      error = error - 1.0;
+    }
+  }
 
-    exactX += dx;
-    exactY += dy;
-
-    x = (int) exactX;
-    y = (int) exactY;
-  } while( x > 0 && y > 0 && (x - pt.x > vec.x || y - pt.y > vec.y));
+  // double dx = vec.x < 0 ? -1.0 : 1.0;
+  // double dy = (double)(vec.y) / (double)(vec.x * dx);
+  //
+  // double exactX = (double) pt.x;
+  // double exactY = (double) pt.y;
+  //
+  // int x = (int) exactX;
+  // int y = (int) exactY;
+  // do {
+  //   Pixel(x+1,y) = shade;
+  //   Pixel(x,y+1) = shade;
+  //
+  //   Pixel(x-1,y) = shade;
+  //   Pixel(x,y-1) = shade;
+  //
+  //   exactX += dx;
+  //   exactY += dy;
+  //
+  //   x = (int) exactX;
+  //   y = (int) exactY;
+  // } while( x > 0 && y > 0 && (x - pt.x > vec.x || y - pt.y > vec.y));
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -726,9 +806,9 @@ double normalizedCrossCorrelation(R2Image *image1, R2Image* image2, ValPoint pt1
   return 0.0;
 }
 
-ValPoint* R2Image::translationVectorsToImage(ValPoint* topPoints, R2Image *otherImage, int numPts, int sigma, int maxSteps)
+VectorOrigin* R2Image::translationVectorsToImage(ValPoint* topPoints, R2Image *otherImage, int numPts, int sigma, int maxSteps, bool indicators)
 {
-  ValPoint *translationVectors = new ValPoint[numPts];
+  VectorOrigin *translationVectors = new VectorOrigin[numPts];
 
   for (int ptIndex = 0; ptIndex < numPts; ptIndex++) {
     ValPoint curPt = topPoints[ptIndex];
@@ -763,8 +843,6 @@ ValPoint* R2Image::translationVectorsToImage(ValPoint* topPoints, R2Image *other
       }
 
       bool logging = false;
-      if (x == -20 && y == -13)
-        logging = false;
       double testDiff = sumSquaredDifferences(this, otherImage, curPt, testPt, sigma, logging);
       // double testDiff = normalizedCrossCorrelation(this, otherImage, curPt, testPt, sigma);
 
@@ -778,13 +856,15 @@ ValPoint* R2Image::translationVectorsToImage(ValPoint* topPoints, R2Image *other
     steps++;
     int curDx = curPt.x-minDiffPt.x;
     int curDy = curPt.y-minDiffPt.y;
-    translationVectors[ptIndex] = ValPoint(curDx, curDy);
+    translationVectors[ptIndex] = VectorOrigin(curDx, curDy, curPt.x, curPt.y);
 
-    colorAroundPoint(curPt.x, curPt.y, 2);
-    drawVectorFromPoint(curPt, ValPoint(curDx, curDy));
-    colorAroundPoint(curPt.x + curDx, curPt.y + curDy, 2);
-
-    printf("Vector: ( %i , %i ) from (%i, %i) with SSD: %f\n",curPt.x-minDiffPt.x, curPt.y-minDiffPt.y, curPt.x, curPt.y, minDiffPt.val);
+    if(indicators)
+    {
+      colorAroundPoint(curPt.x, curPt.y, 2);
+      drawVectorFromPoint(curPt, ValPoint(curDx, curDy));
+      colorAroundPoint(curPt.x + curDx, curPt.y + curDy, 2);
+      printf("Vector: ( %i , %i ) from (%i, %i) with SSD: %f\n",curPt.x-minDiffPt.x, curPt.y-minDiffPt.y, curPt.x, curPt.y, minDiffPt.val);
+    }
   }
   return translationVectors;
 }
@@ -815,55 +895,96 @@ void R2Image::blendOtherImageTranslated(R2Image * otherImage)
   // step size for the spiral search pattern for a match
   const int maxSteps = 10000;
 
+
   // calculates the top points from the harris filter and the translation between images based on those
+  puts("calculating top Harris feature points...");
   ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
-  ValPoint *translationVectors = translationVectorsToImage(topPoints, otherImage, numPts, sigma, maxSteps);
+  puts("calculating translation vectors from feature points...");
+  VectorOrigin *translationVectors = translationVectorsToImage(topPoints, otherImage, numPts, sigma, maxSteps, false);
 
   // calculate averages
-  double2 totalAvg = averageVector(translationVectors, numPts);
+  // double2 totalAvg = averageVector(translationVectors, numPts);
 
-  // calculate 2 standard deviations away
-  double stdDevLimX = 0.0;
-  double stdDevLimY = 0.0;
-  for (int i = 0; i < numPts; i++) {
-    stdDevLimX += pow(translationVectors[i].x - totalAvg.x, 2);
-    stdDevLimY += pow(translationVectors[i].y - totalAvg.y, 2);
-  }
-  stdDevLimX = sqrt(stdDevLimX/(double)(numPts - 1));
-  stdDevLimY = sqrt(stdDevLimY/(double)(numPts - 1));
+  // // calculate 2 standard deviations away
+  // double stdDevLimX = 0.0;
+  // double stdDevLimY = 0.0;
+  // for (int i = 0; i < numPts; i++) {
+  //   stdDevLimX += pow(translationVectors[i].x - totalAvg.x, 2);
+  //   stdDevLimY += pow(translationVectors[i].y - totalAvg.y, 2);
+  // }
+  // stdDevLimX = sqrt(stdDevLimX/(double)(numPts - 1));
+  // stdDevLimY = sqrt(stdDevLimY/(double)(numPts - 1));
+  //
+  // printf("found averages: (%f, %f), and 2*stdDevs: (%f, %f)\n",totalAvg.x, totalAvg.y, stdDevLimX, stdDevLimY);
+  //
+  // // calculate averages of numbers within t standard deviations of the mean
+  // double avgDx = 0;
+  // double avgDy = 0;
+  // int usedPtCount = 0;
+  // for (int i = 0; i < numPts; i++) {
+  //   double curX = translationVectors[i].x;
+  //   double curY = translationVectors[i].y;
+  //   if (abs(curX - totalAvg.x) < stdDevLimX && abs(curY - totalAvg.y) < stdDevLimY) {
+  //     avgDx += curX;
+  //     avgDy += curY;
+  //     usedPtCount++;
+  //   }
+  // }
+  // avgDx /= (double)usedPtCount;
+  // avgDy /= (double)usedPtCount;
 
-  printf("found averages: (%f, %f), and 2*stdDevs: (%f, %f)\n",totalAvg.x, totalAvg.y, stdDevLimX, stdDevLimY);
 
-  // calculate averages of numbers within t standard deviations of the mean
-  double avgDx = 0;
-  double avgDy = 0;
-  int usedPtCount = 0;
-  for (int i = 0; i < numPts; i++) {
-    double curX = translationVectors[i].x;
-    double curY = translationVectors[i].y;
-    if (abs(curX - totalAvg.x) < stdDevLimX && abs(curY - totalAvg.y) < stdDevLimY) {
-      avgDx += curX;
-      avgDy += curY;
-      usedPtCount++;
+  const int threshold = 5;
+
+  double2 avg;
+  int ransacCount = 0;
+  int bestVecIndx = 0;
+  int mostInliers = 0;
+  while(ransacCount++ < 10) {
+    int cur = rand()%numPts;
+
+    int inliers = 0;
+    for (int i = 0; i < numPts; i++) {
+      int xDiff = translationVectors[i].xVec - translationVectors[cur].xVec;
+      int yDiff = translationVectors[i].yVec - translationVectors[cur].yVec;
+      if (abs(xDiff) < threshold && abs(yDiff) < threshold) {
+        inliers++;
+      }
+    }
+    if(inliers > mostInliers) {
+      bestVecIndx = cur;
+      mostInliers = inliers;
     }
   }
-  avgDx /= (double)usedPtCount;
-  avgDy /= (double)usedPtCount;
+  printf("found %i inliers out of %i from vector (%i, %i)\n",mostInliers, numPts,translationVectors[bestVecIndx].xVec,translationVectors[bestVecIndx].yVec);
+  for (int i = 0; i < numPts; i++) {
+    int xDiff = translationVectors[i].xVec - translationVectors[bestVecIndx].xVec;
+    int yDiff = translationVectors[i].yVec - translationVectors[bestVecIndx].yVec;
+    // printf("(%i,%i)<=>(%i,%i) xDiff: %i yDiff:%i\n",translationVectors[i].xVec,translationVectors[i].yVec,translationVectors[bestVecIndx].xVec,translationVectors[bestVecIndx].yVec,xDiff, yDiff);
+    if (abs(xDiff) < threshold && abs(yDiff) < threshold) { // gaurd statement for pixels too close
+      line(translationVectors[i].xOrg,
+           translationVectors[i].xOrg + translationVectors[i].xVec,
+           translationVectors[i].yOrg,
+           translationVectors[i].yOrg + translationVectors[i].yVec,
+           0, 1, 0);
+      colorAroundPoint(translationVectors[i].xOrg, translationVectors[i].yOrg, 2);
+    }
+  }
 
   // overlays the other image onto the current
-  printf("non error-corrected translation vector: (%f, %f)\n",avgDx, avgDy);
-  int xShift = (int)floor(avgDx);
-  int yShift = (int)floor(avgDy);
-  for (int x = 0; x < Width(); x++) {
-    for (int y = 0; y < Height(); y++) {
-      int newX = x - xShift;
-      int newY = y - yShift;
-      if (newX < 0 || newY < 0 || newX > Width() || newY > Height()) {
-        continue;
-      }
-      Pixel(x,y) = (Pixel(x,y) + otherImage->Pixel(newX,newY)) / 2.0;
-    }
-  }
+  // printf("error-corrected translation vector: (%f, %f)\n",avg.x, avg.y);
+  // int xShift = (int)floor(avg.x);
+  // int yShift = (int)floor(avg.y);
+  // for (int x = 0; x < Width(); x++) {
+  //   for (int y = 0; y < Height(); y++) {
+  //     int newX = x - xShift;
+  //     int newY = y - yShift;
+  //     if (newX < 0 || newY < 0 || newX > Width() || newY > Height()) {
+  //       continue;
+  //     }
+  //     // Pixel(x,y) = (Pixel(x,y) + otherImage->Pixel(newX,newY)) / 2.0;
+  //   }
+  // }
 
 	fprintf(stderr, "fit other image using translation and blend imageB over imageA\n");
 	return;
@@ -877,7 +998,7 @@ void R2Image::blendOtherImageHomography(R2Image * otherImage)
   // number of feature points to attempt matching
   const int numPts = 100;
   // size of the examination kernel
-  const int sigma = 15;
+  // const int sigma = 15;
 
   // ValPoint *topPoints = topHarrisFeaturePoints(sigma, numPts);
   // ValPoint *translationVectors = new ValPoint[numPts];
